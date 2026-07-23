@@ -1,0 +1,118 @@
+"use client"
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
+
+import type { PresencasTimeline as Dados } from "@/lib/headcount"
+
+const COR_GERAL = "#4B0085"
+
+type TooltipProps = {
+  active?: boolean
+  label?: string | number
+  payload?: { dataKey?: string | number; value?: number | null }[]
+}
+
+function CustomTooltip({ active, payload, label }: TooltipProps) {
+  if (!active || !payload?.length) return null
+  const v = payload.find((p) => p.dataKey === "aderencia")?.value
+  return (
+    <div className="rounded-xl border border-amyris/10 bg-white/90 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_rgba(75,0,133,0.4)] backdrop-blur-xl">
+      <p className="mb-1.5 font-semibold text-foreground">Dia {label}</p>
+      <p className="flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: COR_GERAL }} />
+        Aderência
+        <span className="ml-3 font-semibold tabular-nums text-foreground">
+          {v == null ? "—" : `${v}%`}
+        </span>
+      </p>
+    </div>
+  )
+}
+
+/** Aderência (%) por dia — barras com meta de 90% (presenças ÷ escalados no dia). */
+export function AderenciaChart({ dados }: { dados: Dados }) {
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COR_GERAL }} aria-hidden />
+          Aderência
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-0 w-3.5 border-t-2 border-dashed border-emerald-600" aria-hidden />
+          Meta {dados.metaAderencia}%
+        </span>
+      </div>
+
+      <div
+        className="mt-4"
+        role="img"
+        aria-label={`Gráfico de barras da aderência diária (presenças sobre escalados), com meta de ${dados.metaAderencia}%.`}
+      >
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={dados.pontos} margin={{ top: 12, right: 16, left: 0, bottom: 0 }} barCategoryGap="18%">
+            <defs>
+              <linearGradient id="fillAdGeral" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={COR_GERAL} stopOpacity={0.95} />
+                <stop offset="100%" stopColor={COR_GERAL} stopOpacity={0.55} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid stroke="#EDE7F6" vertical={false} />
+            <XAxis
+              dataKey="dia"
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+              minTickGap={14}
+              tick={{ fontSize: 11, fill: "#7A7A7A" }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={40}
+              domain={[0, 100]}
+              ticks={[0, 25, 50, 75, 90, 100]}
+              tickFormatter={(v: number) => `${v}%`}
+              tick={{ fontSize: 11, fill: "#7A7A7A" }}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(75,0,133,0.06)" }} />
+
+            <ReferenceLine
+              y={dados.metaAderencia}
+              stroke="#16A34A"
+              strokeDasharray="5 4"
+              strokeWidth={1.5}
+              label={{
+                value: `Meta ${dados.metaAderencia}%`,
+                position: "insideTopRight",
+                fill: "#16A34A",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            />
+
+            <Bar
+              dataKey="aderencia"
+              name="Aderência"
+              fill="url(#fillAdGeral)"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={26}
+              animationDuration={900}
+              animationEasing="ease-out"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}

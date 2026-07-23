@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Tema Amyris — lavanda quase branco + roxo profundo da marca (#4B0085). */
+    --background: 276 40% 99%;
+    --foreground: 274 35% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 274 35% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 274 35% 12%;
+    --primary: 274 100% 26%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 276 44% 96%;
+    --secondary-foreground: 274 35% 16%;
+    --muted: 276 30% 96%;
+    --muted-foreground: 274 12% 42%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 78% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 276 30% 90%;
+    --input: 276 30% 90%;
+    --ring: 274 100% 40%;
+    --radius: 0.85rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  ::selection {
+    background-color: rgba(124, 58, 237, 0.22);
+  }
+}
+
+@layer components {
+  /* Vidro fosco premium para cards/painéis sobre fundos coloridos. */
+  .glass {
+    @apply border border-white/60 bg-white/70 backdrop-blur-xl;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 18px 50px -24px rgba(75, 0, 133, 0.4);
+  }
+
+  /* Texto com gradiente da marca. */
+  .text-gradient {
+    @apply bg-amyris-grad bg-clip-text text-transparent;
+  }
+
+  /* Pílula/etiqueta de seção. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-amyris/15 bg-amyris-mist px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-amyris;
+  }
+}
+
+@layer utilities {
+  /* Brilho que segue o cursor nos TiltCard. */
+  .tilt-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      460px circle at var(--mx, 50%) var(--my, 0%),
+      rgba(124, 58, 237, 0.16),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .tilt-card:hover::after {
+    opacity: 1;
+  }
+
+  /* Entrada escalonada de elementos. */
+  .reveal {
+    animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.32s; }
+  .delay-5 { animation-delay: 0.4s; }
+
+  /* Grade pontilhada sutil (fundo de seções internas). */
+  .bg-dots {
+    background-image: radial-gradient(rgba(75, 0, 133, 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee 28s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    .reveal,
+    .animate-marquee,
+    .animate-float {
+      animation: none !important;
+    }
+    .tilt-card {
+      transform: none !important;
+    }
+  }
+}
