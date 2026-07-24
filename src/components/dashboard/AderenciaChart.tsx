@@ -4,7 +4,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -38,7 +37,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-/** Aderência (%) por dia — barras com meta de 90% (presenças ÷ escalados no dia). */
+/** Aderência (%) por dia (presenças ÷ escalados no dia). */
 export function AderenciaChart({ dados }: { dados: Dados }) {
   return (
     <div>
@@ -47,16 +46,12 @@ export function AderenciaChart({ dados }: { dados: Dados }) {
           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COR_GERAL }} aria-hidden />
           Aderência
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-0 w-3.5 border-t-2 border-dashed border-emerald-600" aria-hidden />
-          Meta {dados.metaAderencia}%
-        </span>
       </div>
 
       <div
         className="mt-4"
         role="img"
-        aria-label={`Gráfico de barras da aderência diária (presenças sobre escalados), com meta de ${dados.metaAderencia}%.`}
+        aria-label="Gráfico de barras da aderência diária (presenças sobre escalados)."
       >
         <ResponsiveContainer width="100%" height={320}>
           <BarChart data={dados.pontos} margin={{ top: 12, right: 16, left: 0, bottom: 0 }} barCategoryGap="18%">
@@ -86,20 +81,6 @@ export function AderenciaChart({ dados }: { dados: Dados }) {
               tick={{ fontSize: 11, fill: "#7A7A7A" }}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(75,0,133,0.06)" }} />
-
-            <ReferenceLine
-              y={dados.metaAderencia}
-              stroke="#16A34A"
-              strokeDasharray="5 4"
-              strokeWidth={1.5}
-              label={{
-                value: `Meta ${dados.metaAderencia}%`,
-                position: "insideTopRight",
-                fill: "#16A34A",
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            />
 
             <Bar
               dataKey="aderencia"

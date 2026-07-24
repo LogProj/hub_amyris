@@ -2,10 +2,11 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { Menu, X, Search, LogOut, UserRound } from "lucide-react"
+import { Menu, X, Search } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
+import { InhausLogo } from "@/components/brand/InhausLogo"
 
 type Sessao = {
   user: { name: string | null; email: string }
@@ -62,7 +63,13 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh bg-amyris-radial">
       {/* Sidebar fixa (desktop) */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-amyris/10 bg-white/80 backdrop-blur-xl lg:block">
-        <DashboardSidebar isAdmin={isAdmin} />
+        <DashboardSidebar
+          isAdmin={isAdmin}
+          nome={nome}
+          email={email}
+          onLogout={handleLogout}
+          signingOut={signingOut}
+        />
       </aside>
 
       {/* Drawer (mobile) */}
@@ -85,7 +92,14 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             drawer ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          <DashboardSidebar isAdmin={isAdmin} onNavigate={() => setDrawer(false)} />
+          <DashboardSidebar
+            isAdmin={isAdmin}
+            nome={nome}
+            email={email}
+            onLogout={handleLogout}
+            signingOut={signingOut}
+            onNavigate={() => setDrawer(false)}
+          />
         </div>
       </div>
 
@@ -110,29 +124,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             />
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-xl border border-amyris/10 bg-white/70 px-3 py-1.5 sm:flex">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amyris-grad text-white">
-                <UserRound className="h-4 w-4" />
-              </span>
-              <div className="leading-tight">
-                <p className="max-w-[160px] truncate text-xs font-semibold text-foreground">
-                  {nome ?? email ?? "Carregando…"}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {isAdmin ? "Administrador" : email ? "Acesso ao sistema" : ""}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              disabled={signingOut}
-              className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-foreground/70 transition-colors hover:bg-amyris-mist hover:text-amyris disabled:opacity-50"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">{signingOut ? "Saindo…" : "Sair"}</span>
-            </button>
-          </div>
+          <InhausLogo className="ml-auto hidden h-6 shrink-0 sm:inline-block" />
         </header>
 
         <main className="px-4 py-8 sm:px-6 lg:px-10">{children}</main>

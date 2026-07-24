@@ -1,20 +1,55 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Activity, Timer, PackageCheck, Boxes, ArrowUpRight, Sparkles } from "lucide-react"
+import {
+  ArrowUpRight,
+  Sparkles,
+  Users,
+  RefreshCw,
+  HardHat,
+  ShieldAlert,
+  Lock,
+} from "lucide-react"
 
 import { TiltCard } from "@/components/TiltCard"
 import { Button } from "@/components/ui/button"
+import { getHeadcount, getMesesDisponiveis as getMesesAbsenteismo, getPresencasTimeline } from "@/lib/headcount"
+import { getTurnoverData } from "@/lib/turnover"
 
 export const metadata: Metadata = { title: "Visão geral" }
 
-const PLACEHOLDERS = [
-  { icon: Activity, label: "Nível de serviço", hint: "% de pedidos no prazo" },
-  { icon: Timer, label: "Lead time médio", hint: "Da coleta à entrega" },
-  { icon: PackageCheck, label: "OTIF", hint: "On time, in full" },
-  { icon: Boxes, label: "Acuracidade de estoque", hint: "Inventário x sistema" },
-]
+// Consulta os indicadores a cada requisição (sem prerender no build).
+export const dynamic = "force-dynamic"
 
-export default function DashboardsHome() {
+type ResumoAbsenteismo = { aderenciaMediaGeral: number; totalFaltas: number } | null
+type ResumoTurnover = { quadroAtivoAtual: number; taxaTurnoverPct: number } | null
+
+async function getResumoAbsenteismo(): Promise<ResumoAbsenteismo> {
+  try {
+    const meses = await getMesesAbsenteismo()
+    const mes = meses[0]
+    if (!mes) return null
+    const [headcount, timeline] = await Promise.all([getHeadcount(mes), getPresencasTimeline(mes)])
+    return { aderenciaMediaGeral: timeline.aderenciaMediaGeral, totalFaltas: headcount.totalFaltas }
+  } catch {
+    return null
+  }
+}
+
+async function getResumoTurnover(): Promise<ResumoTurnover> {
+  try {
+    const data = await getTurnoverData()
+    return {
+      quadroAtivoAtual: data.kpis.quadroAtivoAtual,
+      taxaTurnoverPct: data.kpis.taxaTurnoverPct,
+    }
+  } catch {
+    return null
+  }
+}
+
+export default async function DashboardsHome() {
+  const [absenteismo, turnover] = await Promise.all([getResumoAbsenteismo(), getResumoTurnover()])
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       {/* Cabeçalho */}
@@ -40,52 +75,112 @@ export default function DashboardsHome() {
         </Button>
       </section>
 
-      {/* Placeholders de métricas */}
-      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {PLACEHOLDERS.map((m, i) => (
-          <TiltCard key={m.label} max={5}>
+      {/* Indicadores do hub */}
+      <section className="space-y-4">
+        <div className="reveal">
+          <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
+            Indicadores
+          </h2>
+          <p className="text-sm text-muted-foreground">Resumo do mês corrente por indicador.</p>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {/* Absenteísmo */}
+          <TiltCard max={5}>
+            <Link href="/dashboards/absenteismo" className="block h-full">
+              <div className="glass reveal relative h-full overflow-hidden rounded-3xl p-6 transition-shadow hover:shadow-glow">
+                <div className="flex items-center justify-between">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amyris-mist text-amyris">
+                    <Users className="h-5 w-5" />
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="mt-5 text-sm font-medium text-foreground">Absenteísmo</p>
+                {absenteismo ? (
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="font-display text-2xl font-semibold text-foreground">
+                      {absenteismo.aderenciaMediaGeral}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">aderência média</span>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">Indicador indisponível</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {absenteismo ? `${absenteismo.totalFaltas} faltas no mês` : "Não foi possível consultar agora"}
+                </p>
+              </div>
+            </Link>
+          </TiltCard>
+
+          {/* Turnover */}
+          <TiltCard max={5}>
+            <Link href="/dashboards/turnover" className="block h-full">
+              <div
+                className="glass reveal relative h-full overflow-hidden rounded-3xl p-6 transition-shadow hover:shadow-glow"
+                style={{ animationDelay: "0.06s" }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amyris-mist text-amyris">
+                    <RefreshCw className="h-5 w-5" />
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="mt-5 text-sm font-medium text-foreground">Turnover</p>
+                {turnover ? (
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="font-display text-2xl font-semibold text-foreground">
+                      {turnover.quadroAtivoAtual}
+                    </span>
+                    <span className="text-xs text-muted-foreground">quadro ativo</span>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">Indicador indisponível</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {turnover ? `${turnover.taxaTurnoverPct}% de turnover no mês` : "Não foi possível consultar agora"}
+                </p>
+              </div>
+            </Link>
+          </TiltCard>
+
+          {/* Utilização de EPIs — em breve */}
+          <TiltCard max={5}>
             <div
               className="glass reveal relative h-full overflow-hidden rounded-3xl p-6"
-              style={{ animationDelay: `${0.06 * (i + 1)}s` }}
+              style={{ animationDelay: "0.12s" }}
             >
               <div className="flex items-center justify-between">
                 <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amyris-mist text-amyris">
-                  <m.icon className="h-5 w-5" />
+                  <HardHat className="h-5 w-5" />
                 </span>
-                <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Em breve
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Lock className="h-2.5 w-2.5" /> Em breve
                 </span>
               </div>
-              <p className="mt-5 text-sm font-medium text-foreground">{m.label}</p>
-              <p className="text-xs text-muted-foreground">{m.hint}</p>
-              {/* barra-esqueleto */}
-              <div className="mt-4 h-2 w-2/3 overflow-hidden rounded-full bg-muted">
-                <div className="h-full w-1/2 rounded-full bg-amyris-grad opacity-40" />
-              </div>
+              <p className="mt-5 text-sm font-medium text-foreground">Utilização de EPIs</p>
+              <p className="text-xs text-muted-foreground">Uso correto de equipamentos de proteção</p>
             </div>
           </TiltCard>
-        ))}
-      </section>
 
-      {/* Estado vazio principal */}
-      <section className="reveal overflow-hidden rounded-[2rem] border border-amyris/10 bg-white/70 p-10 text-center backdrop-blur sm:p-16">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-amyris-grad text-white shadow-glow">
-          <Activity className="h-8 w-8" />
-        </div>
-        <h2 className="mx-auto mt-6 max-w-xl font-display text-2xl font-semibold tracking-tight text-foreground">
-          Os indicadores estão a caminho
-        </h2>
-        <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
-          Estamos preparando os dashboards da operação logística. Enquanto isso, explore os
-          guias para conhecer as definições e os padrões da In-Haus.
-        </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild variant="gradient">
-            <Link href="/guias">Explorar guias</Link>
-          </Button>
-          <Button asChild variant="ghost">
-            <Link href="/sobre">Conhecer a In-Haus</Link>
-          </Button>
+          {/* Ocorrências — em breve */}
+          <TiltCard max={5}>
+            <div
+              className="glass reveal relative h-full overflow-hidden rounded-3xl p-6"
+              style={{ animationDelay: "0.18s" }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amyris-mist text-amyris">
+                  <ShieldAlert className="h-5 w-5" />
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Lock className="h-2.5 w-2.5" /> Em breve
+                </span>
+              </div>
+              <p className="mt-5 text-sm font-medium text-foreground">Ocorrências</p>
+              <p className="text-xs text-muted-foreground">Registro e acompanhamento de ocorrências</p>
+            </div>
+          </TiltCard>
         </div>
       </section>
     </div>

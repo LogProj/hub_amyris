@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { ArrowLeft, Sparkles, ShieldCheck, Leaf } from "lucide-react"
+import { Sparkles, ShieldCheck, Leaf } from "lucide-react"
 
 import { HeroCanvas } from "@/components/HeroCanvas"
 import { LoginForm } from "@/components/auth/LoginForm"
@@ -20,7 +19,12 @@ export default function LoginPage() {
         <HeroCanvas className="absolute inset-0 h-full w-full opacity-95" />
         <div className="absolute inset-0 bg-gradient-to-tr from-amyris-ink/70 via-transparent to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-between p-12">
-          <AmyrisLogo className="h-7 text-white" />
+          <div className="flex items-center justify-center gap-6">
+            <AmyrisLogo className="h-8 text-white" />
+            <span className="h-7 w-px bg-white/25" aria-hidden="true" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/inhaus-logo-full-white.svg" alt="In-Haus" className="h-9 w-auto" />
+          </div>
           <div className="max-w-md">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-white/90 backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
@@ -42,17 +46,11 @@ export default function LoginPage() {
 
       {/* Formulário */}
       <div className="relative flex items-center justify-center bg-amyris-radial px-5 py-12 sm:px-10">
-        <Link
-          href="/"
-          className="absolute left-5 top-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-amyris sm:left-10"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar ao site
-        </Link>
-
         <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
             <AmyrisLogo className="h-7" />
+            <span className="h-5 w-px bg-amyris/15" aria-hidden="true" />
+            <InhausLogo className="h-5" />
           </div>
 
           <div className="reveal">

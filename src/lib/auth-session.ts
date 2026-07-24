@@ -230,6 +230,39 @@ export async function getCurrentSession(): Promise<Sessao | null> {
   }
 }
 
+// Variante SOMENTE LEITURA para Server Components (layouts/pages), que NÃO podem
+// gravar cookies no Next 14. Valida o access token em /auth/me sem rotacionar nem
+// limpar cookies. Se o access estiver expirado mas houver refresh token, quem
+// rotaciona é a rota /api/auth/refresh (Route Handler) — o layout redireciona pra lá.
+export type SessaoReadOnly =
+  | { status: "ok"; sessao: Sessao }
+  | { status: "renovar" } // access inválido, mas há refresh — rotacionar via route handler
+  | { status: "anonimo" }
+
+export async function getSessionReadOnly(): Promise<SessaoReadOnly> {
+  const store = cookies()
+  const accessToken = store.get(ACCESS_COOKIE)?.value ?? null
+  const refreshToken = store.get(REFRESH_COOKIE)?.value ?? null
+
+  if (accessToken) {
+    const cacheado = lerCache(accessToken)
+    if (cacheado) return { status: "ok", sessao: cacheado }
+    try {
+      const user = await getGlobalAuthUser(accessToken)
+      const sessao = await resolverSessao(user)
+      if (sessao) {
+        gravarCache(accessToken, sessao)
+        return { status: "ok", sessao }
+      }
+      return { status: "anonimo" } // autenticado mas sem acesso ao projeto
+    } catch {
+      // access expirado/inválido — sem gravar nada; decide pelo refresh abaixo
+    }
+  }
+
+  return refreshToken ? { status: "renovar" } : { status: "anonimo" }
+}
+
 // ---- Guards ----
 // Inicie TODA rota protegida com requireSession(); admin com requireAdmin().
 

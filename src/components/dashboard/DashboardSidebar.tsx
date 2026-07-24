@@ -13,6 +13,8 @@ import {
   UserCog,
   Lock,
   RefreshCw,
+  LogOut,
+  UserRound,
   type LucideIcon,
 } from "lucide-react"
 
@@ -65,9 +67,17 @@ const ADMIN_GROUP: NavGroup = {
 export function DashboardSidebar({
   onNavigate,
   isAdmin = false,
+  nome = null,
+  email = null,
+  onLogout,
+  signingOut = false,
 }: {
   onNavigate?: () => void
   isAdmin?: boolean
+  nome?: string | null
+  email?: string | null
+  onLogout?: () => void
+  signingOut?: boolean
 }) {
   const pathname = usePathname()
   const groups = isAdmin ? [...GROUPS, ADMIN_GROUP] : GROUPS
@@ -137,6 +147,30 @@ export function DashboardSidebar({
           </div>
         ))}
       </nav>
+
+      <div className="mt-auto border-t border-amyris/10 pt-4">
+        <div className="flex items-center gap-2 rounded-xl border border-amyris/10 bg-white/70 px-3 py-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amyris-grad text-white">
+            <UserRound className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-xs font-semibold text-foreground">
+              {nome ?? email ?? "Carregando…"}
+            </p>
+            <p className="truncate text-[10px] text-muted-foreground">
+              {isAdmin ? "Administrador" : email ? "Acesso ao sistema" : ""}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onLogout}
+          disabled={signingOut}
+          className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-medium text-foreground/70 transition-colors hover:bg-amyris-mist hover:text-amyris disabled:opacity-50"
+        >
+          <LogOut className="h-4 w-4" />
+          {signingOut ? "Saindo…" : "Sair"}
+        </button>
+      </div>
     </div>
   )
 }
