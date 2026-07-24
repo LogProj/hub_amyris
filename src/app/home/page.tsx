@@ -52,9 +52,6 @@ export default function LandingPage() {
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/guias">Conhecer os guias</Link>
-              </Button>
             </div>
 
             <div className="reveal delay-4 mt-8 flex items-center gap-2 text-sm text-muted-foreground">

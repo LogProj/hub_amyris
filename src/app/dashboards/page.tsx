@@ -11,7 +11,6 @@ import {
 } from "lucide-react"
 
 import { TiltCard } from "@/components/TiltCard"
-import { Button } from "@/components/ui/button"
 import { getHeadcount, getMesesDisponiveis as getMesesAbsenteismo, getPresencasTimeline } from "@/lib/headcount"
 import { getTurnoverData } from "@/lib/turnover"
 
@@ -67,12 +66,6 @@ export default async function DashboardsHome() {
             estrutura está pronta — os KPIs entram em breve.
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/guias">
-            Ver guias
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </Button>
       </section>
 
       {/* Indicadores do hub */}

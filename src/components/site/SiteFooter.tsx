@@ -20,9 +20,6 @@ export function SiteFooter() {
           <Link href="/dashboards" className="block text-muted-foreground hover:text-amyris">
             Dashboards
           </Link>
-          <Link href="/guias" className="block text-muted-foreground hover:text-amyris">
-            Guias
-          </Link>
           <Link href="/sobre" className="block text-muted-foreground hover:text-amyris">
             Sobre a In-Haus
           </Link>

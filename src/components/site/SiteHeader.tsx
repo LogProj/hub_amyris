@@ -11,7 +11,6 @@ import { AmyrisLogo } from "@/components/brand/AmyrisLogo"
 
 const NAV = [
   { href: "/dashboards", label: "Dashboards" },
-  { href: "/guias", label: "Guias" },
   { href: "/sobre", label: "Sobre a In-Haus" },
 ]
 
