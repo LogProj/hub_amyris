@@ -10,6 +10,7 @@ import {
   Send,
   Users,
   HardHat,
+  ShieldAlert,
   UserCog,
   Lock,
   RefreshCw,
@@ -55,6 +56,7 @@ const GROUPS: NavGroup[] = [
       { href: "/dashboards/absenteismo", label: "Absenteísmo", icon: Users },
       { href: "/dashboards/turnover", label: "Turnover", icon: RefreshCw },
       { href: "/dashboards/epi", label: "EPI", icon: HardHat },
+      { href: "/dashboards/ocorrencias", label: "Ocorrências", icon: ShieldAlert },
     ],
   },
 ]

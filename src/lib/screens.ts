@@ -15,6 +15,7 @@ export const HUB_SCREENS: HubScreen[] = [
   { key: "absenteismo", label: "Absenteísmo", href: "/dashboards/absenteismo" },
   { key: "turnover", label: "Turnover", href: "/dashboards/turnover" },
   { key: "epi", label: "EPI", href: "/dashboards/epi" },
+  { key: "ocorrencias", label: "Controle de Ocorrências", href: "/dashboards/ocorrencias" },
 ]
 
 export const HUB_SCREEN_KEYS = HUB_SCREENS.map((s) => s.key)

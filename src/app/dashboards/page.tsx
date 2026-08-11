@@ -13,6 +13,7 @@ import {
 import { TiltCard } from "@/components/TiltCard"
 import { getHeadcount, getMesesDisponiveis as getMesesAbsenteismo, getPresencasTimeline } from "@/lib/headcount"
 import { getTurnoverData } from "@/lib/turnover"
+import { getOcorrenciasData } from "@/lib/ocorrencias"
 
 export const metadata: Metadata = { title: "Visão geral" }
 
@@ -48,6 +49,7 @@ async function getResumoTurnover(): Promise<ResumoTurnover> {
 
 export default async function DashboardsHome() {
   const [absenteismo, turnover] = await Promise.all([getResumoAbsenteismo(), getResumoTurnover()])
+  const ocorrencias = getOcorrenciasData()
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -160,23 +162,31 @@ export default async function DashboardsHome() {
             </div>
           </TiltCard>
 
-          {/* Ocorrências — em breve */}
+          {/* Controle de Ocorrências */}
           <TiltCard max={5}>
-            <div
-              className="glass reveal relative h-full overflow-hidden rounded-3xl p-6"
-              style={{ animationDelay: "0.18s" }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amyris-mist text-amyris">
-                  <ShieldAlert className="h-5 w-5" />
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <Lock className="h-2.5 w-2.5" /> Em breve
-                </span>
+            <Link href="/dashboards/ocorrencias" className="block h-full">
+              <div
+                className="glass reveal relative h-full overflow-hidden rounded-3xl p-6 transition-shadow hover:shadow-glow"
+                style={{ animationDelay: "0.18s" }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amyris-mist text-amyris">
+                    <ShieldAlert className="h-5 w-5" />
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="mt-5 text-sm font-medium text-foreground">Controle de Ocorrências</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="font-display text-2xl font-semibold text-foreground">
+                    {ocorrencias.kpis.totalMes}
+                  </span>
+                  <span className="text-xs text-muted-foreground">ocorrências no mês</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {ocorrencias.kpis.condicoesInseguras} condições · {ocorrencias.kpis.atosInseguros} atos inseguros
+                </p>
               </div>
-              <p className="mt-5 text-sm font-medium text-foreground">Ocorrências</p>
-              <p className="text-xs text-muted-foreground">Registro e acompanhamento de ocorrências</p>
-            </div>
+            </Link>
           </TiltCard>
         </div>
       </section>
