@@ -6,6 +6,7 @@ import { AttendanceGrid } from "@/components/dashboard/AttendanceGrid"
 import { HeadcountKpis } from "@/components/dashboard/HeadcountKpis"
 import { MonthFilter } from "@/components/dashboard/MonthFilter"
 import { RegrasInfo } from "@/components/dashboard/RegrasInfo"
+import { META_ABSENTEISMO_PCT } from "@/lib/headcount-constants"
 import {
   getHeadcount,
   getMesesDisponiveis,
@@ -30,6 +31,10 @@ export const metadata: Metadata = {
 
 // Consulta o ponto real a cada requisição (sem prerender no build).
 export const dynamic = "force-dynamic"
+
+const metaAbsenteismoBR = META_ABSENTEISMO_PCT.toLocaleString("pt-BR", {
+  maximumFractionDigits: 1,
+})
 
 export default async function AbsenteismoPage({
   searchParams,
@@ -101,7 +106,7 @@ export default async function AbsenteismoPage({
                 <div>
                   <h2 className="font-display text-lg font-semibold">Aderência por dia</h2>
                   <p className="text-xs text-muted-foreground">
-                    Presenças ÷ escalados no dia · meta {timeline.metaAderencia}%
+                    Presenças ÷ escalados no dia
                   </p>
                 </div>
                 <div className="mt-4">
@@ -115,9 +120,13 @@ export default async function AbsenteismoPage({
                     <div>
                       <h2 className="font-display text-lg font-semibold">Absenteísmo por dia</h2>
                       <p className="text-xs text-muted-foreground">
-                        Faltas ÷ escalados no dia
+                        Faltas ÷ escalados no dia — meta de {metaAbsenteismoBR}%
                       </p>
                     </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="h-0 w-4 border-t-2 border-dashed border-emerald-600" aria-hidden />
+                      Meta {metaAbsenteismoBR}%
+                    </span>
                   </div>
                   <div className="mt-4">
                     <AbsenteismoChart dados={timeline} />

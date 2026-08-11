@@ -5,7 +5,9 @@ import { createPortal } from "react-dom"
 import { Info, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { CATEGORIAS_EXCLUIDAS, META_ADERENCIA } from "@/lib/headcount-constants"
+import { CATEGORIAS_EXCLUIDAS, META_ABSENTEISMO_PCT } from "@/lib/headcount-constants"
+
+const metaBR = META_ABSENTEISMO_PCT.toLocaleString("pt-BR", { maximumFractionDigits: 1 })
 
 function LegendaItem({
   cor,
@@ -142,6 +144,29 @@ export function RegrasInfo() {
                   </p>
                 </Secao>
 
+                <Secao titulo={`Meta de absenteísmo: ${metaBR}%`}>
+                  <p className="text-muted-foreground">
+                    O combinado com a Amyris é que, no mês, no máximo{" "}
+                    <b className="text-foreground">{metaBR}% das presenças previstas</b> virem
+                    falta. É um <b className="text-foreground">teto</b>: quanto menor, melhor.
+                  </p>
+                  <p className="mt-3 rounded-xl bg-amyris-mist/50 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+                    🔢 <b className="text-foreground">Exemplo:</b> num dia com{" "}
+                    <b className="text-foreground">40 pessoas escaladas</b>, 1 falta dá 2,5% — já
+                    passa da meta. Nesse mesmo dia, <b className="text-foreground">zero falta</b>{" "}
+                    mantém o dia dentro da meta.
+                  </p>
+                  <p className="mt-3 text-muted-foreground">
+                    No painel a meta aparece em dois lugares: a{" "}
+                    <b className="text-foreground">linha verde tracejada</b> no gráfico de
+                    absenteísmo por dia e o selo{" "}
+                    <b className="text-foreground">abaixo/acima da meta</b> no card de média do mês
+                    (em <span className="font-semibold text-emerald-600">verde</span> quando está
+                    dentro e em <span className="font-semibold text-red-600">vermelho</span> quando
+                    estourou).
+                  </p>
+                </Secao>
+
                 <Secao titulo="Indicadores">
                   <dl className="space-y-3">
                     <div>
@@ -154,8 +179,7 @@ export function RegrasInfo() {
                     <div>
                       <dt className="font-semibold text-foreground">Aderência por dia</dt>
                       <dd className="mt-0.5 text-muted-foreground">
-                        presenças ÷ escalados no dia (presenças + faltas), em %, com a{" "}
-                        <b className="text-foreground">meta de {META_ADERENCIA}%</b> (linha tracejada). Dias sem
+                        presenças ÷ escalados no dia (presenças + faltas), em %. Dias sem
                         ninguém escalado ficam sem barra.
                       </dd>
                     </div>
@@ -175,7 +199,9 @@ export function RegrasInfo() {
                     <div>
                       <dt className="font-semibold text-foreground">Absenteísmo por dia</dt>
                       <dd className="mt-0.5 text-muted-foreground">
-                        faltas ÷ escalados no dia, em %.
+                        faltas ÷ escalados no dia, em %. A linha verde tracejada no gráfico é a{" "}
+                        <b className="text-foreground">meta de {metaBR}%</b> — dia acima dela é dia
+                        fora da meta.
                       </dd>
                     </div>
                     <div>
@@ -184,7 +210,8 @@ export function RegrasInfo() {
                         média das <b className="text-foreground">taxas diárias de absenteísmo</b>{" "}
                         (faltas ÷ escalados), considerando apenas os dias com operação. Dias{" "}
                         <b className="text-foreground">zerados</b> — sem ninguém escalado ou ainda
-                        sem lançamento — não entram na conta e não diluem o resultado.
+                        sem lançamento — não entram na conta e não diluem o resultado. É esse número
+                        que é comparado com a <b className="text-foreground">meta de {metaBR}%</b>.
                       </dd>
                     </div>
                     <div>

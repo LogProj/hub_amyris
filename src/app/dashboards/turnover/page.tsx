@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react"
 
 import { DesligadosRecentes } from "@/components/dashboard/DesligadosRecentes"
 import { MonthFilter } from "@/components/dashboard/MonthFilter"
+import { TurnoverInfo } from "@/components/dashboard/TurnoverInfo"
 import { TurnoverKpis } from "@/components/dashboard/TurnoverKpis"
 import { getTurnoverData, type TurnoverData } from "@/lib/turnover"
 
@@ -17,6 +18,9 @@ const TurnoverRateChart = nextDynamic(() =>
 )
 const HeadcountDiarioChart = nextDynamic(() =>
   import("@/components/dashboard/HeadcountDiarioChart").then((m) => m.HeadcountDiarioChart),
+)
+const MovimentacaoDiariaChart = nextDynamic(() =>
+  import("@/components/dashboard/MovimentacaoDiariaChart").then((m) => m.MovimentacaoDiariaChart),
 )
 const TempoCasaChart = nextDynamic(() =>
   import("@/components/dashboard/TempoCasaChart").then((m) => m.TempoCasaChart),
@@ -50,6 +54,7 @@ export default async function TurnoverPage({
           <span className="eyebrow">Gestão</span>
           <div className="mt-3 flex items-center gap-2.5">
             <h1 className="font-display text-3xl font-semibold tracking-tight">Turnover</h1>
+            <TurnoverInfo />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Rotatividade da equipe — admissões, desligamentos e taxa de turnover.
@@ -97,7 +102,7 @@ export default async function TurnoverPage({
               <div>
                 <h2 className="font-display text-lg font-semibold">Taxa de turnover mensal</h2>
                 <p className="text-xs text-muted-foreground">
-                  Desligados no mês ÷ quadro ativo médio do mês (média dos headcounts diários)
+                  Desligados no mês ÷ quadro ativo médio do mês (média dos dias registrados)
                 </p>
               </div>
               <div className="mt-4">
@@ -111,11 +116,25 @@ export default async function TurnoverPage({
               <div>
                 <h2 className="font-display text-lg font-semibold">Headcount por dia</h2>
                 <p className="text-xs text-muted-foreground">
-                  Colaboradores ativos por dia do mês selecionado — congelado quando há snapshot diário, reconstruído como fallback
+                  Colaboradores ativos em cada dia do mês, conforme registrado — dias sem registro ficam sem ponto
                 </p>
               </div>
               <div className="mt-4">
                 <HeadcountDiarioChart dados={data.headcountDiario} />
+              </div>
+            </section>
+
+            <section className="reveal delay-2 glass flex flex-col rounded-2xl p-5 lg:col-span-2">
+              <div>
+                <h2 className="font-display text-lg font-semibold">
+                  Admissões e desligamentos por dia
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Entradas e saídas no dia exato em que ocorreram, no mês selecionado
+                </p>
+              </div>
+              <div className="mt-4">
+                <MovimentacaoDiariaChart dados={data.movimentacaoDiaria} />
               </div>
             </section>
           </div>
@@ -125,7 +144,8 @@ export default async function TurnoverPage({
               <div>
                 <h2 className="font-display text-lg font-semibold">Tempo de casa</h2>
                 <p className="text-xs text-muted-foreground">
-                  Distribuição dos colaboradores ativos hoje ({data.kpis.quadroAtivoAtual})
+                  Distribuição dos colaboradores ativos no último dia registrado (
+                  {data.kpis.quadroAtivoAtual})
                 </p>
               </div>
               <div className="mt-4">

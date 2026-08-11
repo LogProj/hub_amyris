@@ -12,5 +12,9 @@ export const CATEGORIAS_EXCLUIDAS = [
   "SUPERVISOR DE LOGISTICA",
 ] as const
 
-/** Meta de aderência (presenças ÷ escalados no dia). */
-export const META_ADERENCIA = 90
+/**
+ * Meta (target) de absenteísmo acordada com a Amyris: 2,4%. É o teto — quanto
+ * MENOR o absenteísmo, melhor. Usada como linha de referência no gráfico diário
+ * e na comparação do card "Média absenteísmo (mês)".
+ */
+export const META_ABSENTEISMO_PCT = 2.4

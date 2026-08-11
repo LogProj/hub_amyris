@@ -15,12 +15,21 @@ import type { PontoMensal } from "@/lib/turnover"
 type TooltipProps = {
   active?: boolean
   label?: string | number
-  payload?: { dataKey?: string | number; value?: number }[]
+  payload?: { dataKey?: string | number; value?: number | null }[]
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
-  const v = payload.find((p) => p.dataKey === "taxaTurnoverPct")?.value ?? 0
+  const bruto = payload.find((p) => p.dataKey === "taxaTurnoverPct")?.value
+  if (bruto == null) {
+    return (
+      <div className="rounded-xl border border-amyris/10 bg-white/90 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_rgba(75,0,133,0.4)] backdrop-blur-xl">
+        <p className="mb-1 font-semibold text-foreground">{label}</p>
+        <p className="text-muted-foreground">Sem quadro registrado no mês</p>
+      </div>
+    )
+  }
+  const v = bruto
   return (
     <div className="rounded-xl border border-amyris/10 bg-white/90 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_rgba(75,0,133,0.4)] backdrop-blur-xl">
       <p className="mb-1.5 font-semibold text-foreground">{label}</p>
@@ -35,7 +44,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 
 /** Evolução da taxa de turnover mensal (%). */
 export function TurnoverRateChart({ dados }: { dados: PontoMensal[] }) {
-  const maxTaxa = Math.max(5, ...dados.map((p) => p.taxaTurnoverPct))
+  const maxTaxa = Math.max(5, ...dados.map((p) => p.taxaTurnoverPct ?? 0))
   const topo = Math.ceil((maxTaxa + 2) / 5) * 5
 
   return (
@@ -66,6 +75,7 @@ export function TurnoverRateChart({ dados }: { dados: PontoMensal[] }) {
             stroke="#4B0085"
             strokeWidth={3}
             fill="url(#fillTurnoverRate)"
+            connectNulls={false}
             dot={{ r: 2.5, fill: "#4B0085", stroke: "#fff", strokeWidth: 1 }}
             activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
             animationDuration={1100}

@@ -1,8 +1,9 @@
-import { CalendarX2, Target, TrendingDown, Users, type LucideIcon } from "lucide-react"
+import { CalendarX2, Percent, TrendingDown, Users, type LucideIcon } from "lucide-react"
 
+import { META_ABSENTEISMO_PCT } from "@/lib/headcount-constants"
 import { cn } from "@/lib/utils"
 
-const numeroBR = (v: number) => v.toLocaleString("pt-BR")
+const numeroBR = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })
 
 type Tom = "brand" | "violet" | "amber" | "red"
 
@@ -26,6 +27,7 @@ function KpiCard({
   sufixo,
   icon: Icon,
   tom,
+  rodape,
   className,
 }: {
   label: string
@@ -33,6 +35,8 @@ function KpiCard({
   sufixo?: string
   icon: LucideIcon
   tom: Tom
+  /** Linha de apoio abaixo do número (ex.: comparação com a meta). */
+  rodape?: React.ReactNode
   className?: string
 }) {
   return (
@@ -53,8 +57,22 @@ function KpiCard({
         {numeroBR(valor)}
         {sufixo && <span className="ml-0.5 text-xl text-muted-foreground">{sufixo}</span>}
       </p>
-      <div className="mt-2 h-[18px]" aria-hidden />
+      <div className="mt-2 h-[18px] text-xs font-medium leading-[18px]">{rodape}</div>
     </div>
+  )
+}
+
+/** Selo de comparação do absenteísmo do mês com a meta (quanto menor, melhor). */
+function StatusMeta({ valor }: { valor: number }) {
+  const dentro = valor <= META_ABSENTEISMO_PCT
+  const diff = Math.abs(Math.round((valor - META_ABSENTEISMO_PCT + Number.EPSILON) * 10) / 10)
+  return (
+    <span className={dentro ? "text-emerald-600" : "text-red-600"}>
+      Meta {numeroBR(META_ABSENTEISMO_PCT)}% ·{" "}
+      {diff === 0
+        ? "no alvo"
+        : `${numeroBR(diff)} p.p. ${dentro ? "abaixo" : "acima"}`}
+    </span>
   )
 }
 
@@ -84,7 +102,7 @@ export function HeadcountKpis({
         label="Aderência (mês)"
         valor={aderenciaGeral}
         sufixo="%"
-        icon={Target}
+        icon={Percent}
         tom="violet"
       />
       <KpiCard
@@ -94,6 +112,7 @@ export function HeadcountKpis({
         sufixo="%"
         icon={TrendingDown}
         tom="amber"
+        rodape={<StatusMeta valor={mediaAbsenteismo} />}
       />
       <KpiCard
         className="reveal delay-3"

@@ -29,7 +29,8 @@ function KpiCard({
   className,
 }: {
   label: string
-  valor: number
+  /** null = sem base registrada para o cálculo → mostra "—". */
+  valor: number | null
   sufixo?: string
   icon: LucideIcon
   tom: Tom
@@ -50,8 +51,10 @@ function KpiCard({
       </div>
 
       <p className={cn("mt-3 font-display text-3xl font-semibold tabular-nums", TOM_VALOR[tom])}>
-        {numeroBR(valor)}
-        {sufixo && <span className="ml-0.5 text-xl text-muted-foreground">{sufixo}</span>}
+        {valor == null ? "—" : numeroBR(valor)}
+        {valor != null && sufixo && (
+          <span className="ml-0.5 text-xl text-muted-foreground">{sufixo}</span>
+        )}
       </p>
       <div className="mt-2 h-[18px]" aria-hidden />
     </div>
@@ -68,7 +71,7 @@ export function TurnoverKpis({
   quadroAtivoAtual: number
   admissoesMes: number
   desligamentosMes: number
-  taxaTurnoverPct: number
+  taxaTurnoverPct: number | null
 }) {
   return (
     <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

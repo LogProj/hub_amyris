@@ -1,7 +1,7 @@
 import { inhausPool } from "@/lib/db-inhaus"
-import { CATEGORIAS_EXCLUIDAS, META_ADERENCIA } from "@/lib/headcount-constants"
+import { CATEGORIAS_EXCLUIDAS } from "@/lib/headcount-constants"
 
-export { CATEGORIAS_EXCLUIDAS, META_ADERENCIA }
+export { CATEGORIAS_EXCLUIDAS }
 
 /**
  * Leitura do ponto real da Amyris (view public.vw_ponto_amyris no db_inhaus).
@@ -58,10 +58,8 @@ export type TimelinePonto = {
 }
 export type PresencasTimeline = {
   pontos: TimelinePonto[]
-  meta: number
   // % do mês: média das taxas diárias, só dias com operação (escalados > 0)
   mediaAbsenteismo: number
-  metaAderencia: number
   aderenciaMediaGeral: number
 }
 
@@ -90,6 +88,9 @@ export function getMaxAllowedDate(): string {
 }
 
 const HORA = /^\d{1,2}:\d{2}/
+
+/** Arredonda para 1 casa decimal (ex.: 2.44 → 2.4). */
+const uma_casa = (v: number) => Math.round((v + Number.EPSILON) * 10) / 10
 
 const up = (s: string | null) => (s ?? "").toUpperCase()
 /** Detecta FÉRIAS com ou sem acento. */
@@ -271,7 +272,9 @@ export async function getPresencasTimeline(mes: string): Promise<PresencasTimeli
     const escalados = presentes + faltas
 
     const aderencia = escalados > 0 ? Math.round((presentes / escalados) * 100) : null
-    const absenteismo = escalados > 0 ? Math.round((faltas / escalados) * 100) : 0
+    // 1 casa decimal: a meta de absenteísmo é 2,4% — arredondar para inteiro
+    // esconderia a diferença entre estar dentro (2,3%) ou fora (2,5%) da meta.
+    const absenteismo = escalados > 0 ? uma_casa((faltas / escalados) * 100) : 0
 
     pontos.push({ dia: dd, presentes, faltas, escalados, absenteismo, domingo, aderencia })
 
@@ -285,14 +288,12 @@ export async function getPresencasTimeline(mes: string): Promise<PresencasTimeli
     }
   }
 
-  const mediaPct = (soma: number, dias: number) => (dias > 0 ? Math.round((soma / dias) * 100) : 0)
+  const mediaPct = (soma: number, dias: number) => (dias > 0 ? uma_casa((soma / dias) * 100) : 0)
   const mediaAd = (soma: number, dias: number) => (dias > 0 ? Math.round(soma / dias) : 0)
 
   return {
     pontos,
-    meta: META_ADERENCIA,
     mediaAbsenteismo: mediaPct(somaAbsenteismo, diasComOperacao),
-    metaAderencia: META_ADERENCIA,
     aderenciaMediaGeral: mediaAd(somaAderencia, diasComAderencia),
   }
 }

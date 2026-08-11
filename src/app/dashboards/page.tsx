@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Visão geral" }
 export const dynamic = "force-dynamic"
 
 type ResumoAbsenteismo = { aderenciaMediaGeral: number; totalFaltas: number } | null
-type ResumoTurnover = { quadroAtivoAtual: number; taxaTurnoverPct: number } | null
+type ResumoTurnover = { quadroAtivoAtual: number; taxaTurnoverPct: number | null } | null
 
 async function getResumoAbsenteismo(): Promise<ResumoAbsenteismo> {
   try {
@@ -131,7 +131,11 @@ export default async function DashboardsHome() {
                   <p className="mt-2 text-xs text-muted-foreground">Indicador indisponível</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {turnover ? `${turnover.taxaTurnoverPct}% de turnover no mês` : "Não foi possível consultar agora"}
+                  {!turnover
+                    ? "Não foi possível consultar agora"
+                    : turnover.taxaTurnoverPct == null
+                      ? "Sem quadro registrado no mês"
+                      : `${turnover.taxaTurnoverPct}% de turnover no mês`}
                 </p>
               </div>
             </Link>

@@ -76,7 +76,7 @@ export function AderenciaChart({ dados }: { dados: Dados }) {
               axisLine={false}
               width={40}
               domain={[0, 100]}
-              ticks={[0, 25, 50, 75, 90, 100]}
+              ticks={[0, 25, 50, 75, 100]}
               tickFormatter={(v: number) => `${v}%`}
               tick={{ fontSize: 11, fill: "#7A7A7A" }}
             />

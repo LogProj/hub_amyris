@@ -1,30 +1,23 @@
 import { inhausPool } from "@/lib/db-inhaus"
 
 /**
- * Leitura do Turnover da Amyris no db_inhaus, a partir das views alimentadas
- * pelo RPA rpa_sra sobre a tabela public.ft_colaboradores_sra_diario (snapshot
- * CONGELADO por dia, chave cpf + data_referencia — cada execução do RPA grava a
- * "foto" daquele dia sem sobrescrever dias anteriores).
+ * Leitura do Turnover da Amyris no db_inhaus. Fonte ÚNICA e oficial:
+ * public.vw_sra_amyris_diario — o relatório diário de colaboradores (snapshot
+ * CONGELADO por dia, chave cpf + data_referencia: cada execução grava a "foto"
+ * daquele dia sem sobrescrever dias anteriores), já filtrado no CR
+ * '96735 - SP - LOG - AMYRIS - BARRA BONITA'.
  *
- * Fonte oficial do quadro diário (headcount por dia): public.vw_quadro_diario_amyris
- * — view criada para agregar, por data_referencia + descricao_funcao, a
- * quantidade de colaboradores (qtd_colaboradores) e de desligados no snapshot
- * (qtd_demitidos), filtrando cr = '96735 - SP - LOG - AMYRIS - BARRA BONITA'.
- * Somamos qtd_colaboradores entre as funções para obter o headcount total do
- * dia — esse é o "quadro médio do mês" usado na fórmula de turnover.
+ * Regra: o dashboard mostra a REALIDADE DA VIEW. Nada é reconstruído/estimado.
+ *  - Quadro ativo do dia = colaboradores distintos no snapshot daquele dia com
+ *    dt_demissao IS NULL. Dia SEM snapshot fica sem valor (null) — o gráfico
+ *    mantém o dia no eixo, mas com lacuna, em vez de inventar um número.
+ *  - Admissões e desligamentos vêm das datas registradas na própria view
+ *    (dt_admissao / dt_demissao), contando CPFs distintos — por dia e por mês.
+ *    Como varre todos os snapshots (e não só a foto mais recente), quem entrou e
+ *    saiu no meio do período continua contabilizado.
  *
- * Fonte pessoa-a-pessoa (admissão/demissão/função/situação, usada para a lista
- * de desligados recentes, distribuição de tempo de casa e reconstrução de dias
- * sem snapshot congelado): public.vw_sra_amyris_diario.
- *
- * Desligado = dt_demissao IS NOT NULL (campo fixo da pessoa; "situacao" na view
- * é NORMAL/FÉRIAS/AFASTADO — não indica desligamento, então não é usado para
- * essa regra). Ativo = dt_demissao IS NULL.
- *
- * Como a tabela diária só existe a partir da data em que foi criada, dias
- * anteriores a isso (e qualquer dia sem snapshot congelado em
- * vw_quadro_diario_amyris) caem no fallback de reconstrução por
- * dt_admissao/dt_demissao — ver `quadroAtivoEmDia`.
+ * "situacao" na view é NORMAL/FÉRIAS/AFASTADO — não indica desligamento, então
+ * não é usada para essa regra. Desligado = dt_demissao IS NOT NULL.
  */
 
 export type Pessoa = {
@@ -45,11 +38,11 @@ type LinhaBanco = {
   situacao: string | null
 }
 
-/** Meses (YYYY-MM) com snapshot disponível na view oficial de quadro diário, do mais recente para o mais antigo. */
+/** Meses (YYYY-MM) que têm pelo menos um dia registrado na view diária, do mais recente para o mais antigo. */
 export async function getMesesDisponiveis(): Promise<string[]> {
   const { rows } = await inhausPool.query<{ mes: string }>(
-    `select distinct to_char(data, 'YYYY-MM') as mes
-       from public.vw_quadro_diario_amyris
+    `select distinct to_char(data_referencia, 'YYYY-MM') as mes
+       from public.vw_sra_amyris_diario
       order by mes desc`,
   )
   return rows.map((r) => r.mes)
@@ -78,20 +71,56 @@ async function getPessoas(): Promise<Pessoa[]> {
 }
 
 /**
- * Headcount diário congelado (public.vw_quadro_diario_amyris — view oficial de
- * quadro diário criada para este fim), por data_referencia (YYYY-MM-DD) →
- * soma de qtd_colaboradores entre as funções naquele dia. Só existe a partir
- * do dia em que a tabela diária passou a ser alimentada pelo RPA — dias sem
- * entrada aqui usam o fallback de reconstrução.
+ * Quadro ativo por dia registrado na view (YYYY-MM-DD → colaboradores distintos
+ * com dt_demissao IS NULL naquele snapshot). Só existem as datas em que o
+ * relatório diário foi de fato gravado — dias ausentes ficam sem valor.
  */
-async function getHeadcountDiarioCongelado(): Promise<Map<string, number>> {
+async function getQuadroDiarioView(): Promise<Map<string, number>> {
   const { rows } = await inhausPool.query<{ iso: string; ativos: string }>(
-    `select to_char(data, 'YYYY-MM-DD') as iso,
-            sum(qtd_colaboradores) as ativos
-       from public.vw_quadro_diario_amyris
+    `select to_char(data_referencia, 'YYYY-MM-DD') as iso,
+            count(distinct cpf) filter (where dt_demissao is null) as ativos
+       from public.vw_sra_amyris_diario
       group by 1`,
   )
   return new Map(rows.map((r) => [r.iso, Number(r.ativos)]))
+}
+
+/**
+ * Admissões e desligamentos por DIA (YYYY-MM-DD → CPFs distintos), lidos das
+ * datas registradas na view diária. Varre todos os snapshots, então também
+ * conta quem já saiu da foto mais recente.
+ */
+async function getMovimentacoesPorDia(): Promise<{
+  admissoes: Map<string, number>
+  desligamentos: Map<string, number>
+}> {
+  const [adm, desl] = await Promise.all([
+    inhausPool.query<{ iso: string; qtd: string }>(
+      `select to_char(dt_admissao, 'YYYY-MM-DD') as iso, count(distinct cpf) as qtd
+         from public.vw_sra_amyris_diario
+        where dt_admissao is not null
+        group by 1`,
+    ),
+    inhausPool.query<{ iso: string; qtd: string }>(
+      `select to_char(dt_demissao, 'YYYY-MM-DD') as iso, count(distinct cpf) as qtd
+         from public.vw_sra_amyris_diario
+        where dt_demissao is not null
+        group by 1`,
+    ),
+  ])
+  return {
+    admissoes: new Map(adm.rows.map((r) => [r.iso, Number(r.qtd)])),
+    desligamentos: new Map(desl.rows.map((r) => [r.iso, Number(r.qtd)])),
+  }
+}
+
+/** Soma de um mapa diário (iso → qtd) dentro de um mês (YYYY-MM). */
+function somaNoMes(mapa: Map<string, number>, mes: string): number {
+  let total = 0
+  mapa.forEach((qtd, iso) => {
+    if (iso.slice(0, 7) === mes) total += qtd
+  })
+  return total
 }
 
 function mesDe(iso: string | null): string | null {
@@ -105,21 +134,8 @@ function ativoEm(p: Pessoa, dataRef: string): boolean {
 }
 
 /**
- * Quadro ativo em um dia `iso` (YYYY-MM-DD): usa o headcount CONGELADO
- * (public.vw_sra_amyris_diario) quando existe snapshot daquele dia; caso
- * contrário, reconstrói pela regra dt_admissao <= dia e (dt_demissao IS NULL
- * ou dt_demissao >= dia) — fallback necessário para dias anteriores à
- * existência da tabela diária (ou qualquer dia sem execução do RPA).
- */
-function quadroAtivoEmDia(iso: string, congelado: Map<string, number>, pessoas: Pessoa[]): number {
-  const valorCongelado = congelado.get(iso)
-  if (valorCongelado != null) return valorCongelado
-  return pessoas.filter((p) => ativoEm(p, iso)).length
-}
-
-/**
  * Dias (YYYY-MM-DD) do mês `mes`, do dia 1 até o fim do mês — ou até `hojeIso`
- * quando o mês selecionado é o mês corrente (dias futuros não entram na média).
+ * quando o mês selecionado é o mês corrente (dias futuros não entram).
  */
 function diasDoMesAteHoje(mes: string, hojeIso: string): string[] {
   const [anoStr, mesStr] = mes.split("-")
@@ -136,20 +152,19 @@ function diasDoMesAteHoje(mes: string, hojeIso: string): string[] {
 }
 
 /**
- * Número médio de colaboradores ativos no mês = média dos headcounts diários
- * (congelados quando disponíveis, reconstruídos por dt_admissao/dt_demissao
- * quando não) — dias futuros do mês corrente ficam de fora.
+ * Quadro médio do mês = média do quadro ativo dos dias em que existe registro
+ * na view. Dias sem relatório não entram na conta (não são estimados) — se o
+ * mês não tem nenhum dia registrado, não há quadro médio (null).
  */
-function quadroMedioDoMes(
-  mes: string,
-  hojeIso: string,
-  congelado: Map<string, number>,
-  pessoas: Pessoa[],
-): number {
-  const dias = diasDoMesAteHoje(mes, hojeIso)
-  if (dias.length === 0) return 0
-  const soma = dias.reduce((acc, iso) => acc + quadroAtivoEmDia(iso, congelado, pessoas), 0)
-  return soma / dias.length
+function quadroMedioDoMes(mes: string, quadroDiario: Map<string, number>): number | null {
+  let soma = 0
+  let dias = 0
+  quadroDiario.forEach((ativos, iso) => {
+    if (iso.slice(0, 7) !== mes) return
+    soma += ativos
+    dias += 1
+  })
+  return dias > 0 ? soma / dias : null
 }
 
 export type TurnoverKpis = {
@@ -157,14 +172,12 @@ export type TurnoverKpis = {
   admissoesMes: number
   desligamentosMes: number
   /**
-   * Taxa de turnover mensal = (desligados no mês / número médio de
-   * colaboradores ativos no mês) × 100. O quadro médio é a média dos
-   * headcounts diários do mês (congelados via public.vw_sra_amyris_diario,
-   * com fallback de reconstrução por dt_admissao/dt_demissao para dias sem
-   * snapshot) — ver `quadroMedioDoMes`. Resultado em % (0 quando não há
-   * quadro para dividir).
+   * Taxa de turnover mensal = (desligados no mês ÷ quadro ativo médio do mês)
+   * × 100. O quadro médio é a média do quadro ativo dos dias registrados na
+   * view. `null` quando o mês não tem nenhum dia registrado (sem base para o
+   * cálculo) — o dashboard mostra "—" em vez de 0.
    */
-  taxaTurnoverPct: number
+  taxaTurnoverPct: number | null
 }
 
 export type PontoMensal = {
@@ -172,15 +185,23 @@ export type PontoMensal = {
   label: string // MM/AA
   admissoes: number
   desligamentos: number
-  taxaTurnoverPct: number
+  taxaTurnoverPct: number | null
 }
 
 export type PontoHeadcountDiario = {
   iso: string // YYYY-MM-DD
   dia: string // DD
   label: string // DD/MM
-  ativos: number
-  congelado: boolean // true = veio do snapshot diário; false = reconstruído
+  /** Quadro ativo registrado no dia; null quando não há relatório daquele dia. */
+  ativos: number | null
+}
+
+export type PontoMovimentacaoDiaria = {
+  iso: string // YYYY-MM-DD
+  dia: string // DD
+  label: string // DD/MM
+  admissoes: number
+  desligamentos: number
 }
 
 export type FaixaTempoCasa = {
@@ -202,6 +223,7 @@ export type TurnoverData = {
   kpis: TurnoverKpis
   serieMensal: PontoMensal[]
   headcountDiario: PontoHeadcountDiario[]
+  movimentacaoDiaria: PontoMovimentacaoDiaria[]
   tempoCasa: FaixaTempoCasa[]
   desligadosRecentes: Desligado[]
 }
@@ -254,11 +276,16 @@ function faixaTempoCasa(dtAdmissao: string, dataRef: string): string {
 
 const ORDEM_FAIXAS = ["< 3 meses", "3–6 meses", "6–12 meses", "1–2 anos", "2+ anos"]
 
+function arredonda1(v: number): number {
+  return Math.round((v + Number.EPSILON) * 10) / 10
+}
+
 export async function getTurnoverData(mesSelecionado?: string): Promise<TurnoverData> {
-  const [meses, pessoas, congelado] = await Promise.all([
+  const [meses, pessoas, quadroDiario, movimentacoes] = await Promise.all([
     getMesesDisponiveis(),
     getPessoas(),
-    getHeadcountDiarioCongelado(),
+    getQuadroDiarioView(),
+    getMovimentacoesPorDia(),
   ])
 
   const hojeIso = new Date().toISOString().slice(0, 10)
@@ -268,22 +295,19 @@ export async function getTurnoverData(mesSelecionado?: string): Promise<Turnover
     mesSelecionado && meses.includes(mesSelecionado) ? mesSelecionado : meses[0] ?? mesAtualCalendario
 
   // --- KPIs ---
-  const quadroAtivoAtual = pessoas.filter((p) => ativoEm(p, hojeIso)).length
+  // Quadro ativo atual = o último dia efetivamente registrado na view.
+  const ultimoDiaRegistrado = Array.from(quadroDiario.keys()).sort().pop() ?? null
+  const quadroAtivoAtual = ultimoDiaRegistrado ? quadroDiario.get(ultimoDiaRegistrado) ?? 0 : 0
 
-  const admissoesMes = pessoas.filter((p) => mesDe(p.dtAdmissao) === mes).length
-  const desligamentosMes = pessoas.filter((p) => mesDe(p.dtDemissao) === mes).length
+  const admissoesMes = somaNoMes(movimentacoes.admissoes, mes)
+  const desligamentosMes = somaNoMes(movimentacoes.desligamentos, mes)
 
-  // Taxa de turnover mensal = desligados no mês / quadro médio do mês × 100.
-  // Quadro médio = média dos headcounts diários (congelados, com fallback de
-  // reconstrução) — ver `quadroMedioDoMes`.
-  const quadroMedioMes = quadroMedioDoMes(mes, hojeIso, congelado, pessoas)
-
+  const quadroMedioMes = quadroMedioDoMes(mes, quadroDiario)
   const taxaTurnoverPct =
-    quadroMedioMes > 0
-      ? Math.round(((desligamentosMes / quadroMedioMes) * 100 + Number.EPSILON) * 10) / 10
-      : 0
+    quadroMedioMes && quadroMedioMes > 0 ? arredonda1((desligamentosMes / quadroMedioMes) * 100) : null
 
   // --- Headcount por dia (mês selecionado) ---
+  // Todos os dias do mês continuam no eixo; dias sem relatório ficam com lacuna.
   const diasMesSelecionado = diasDoMesAteHoje(mes, hojeIso)
   const headcountDiario: PontoHeadcountDiario[] = diasMesSelecionado.map((iso) => {
     const dia = iso.slice(8, 10)
@@ -292,16 +316,25 @@ export async function getTurnoverData(mesSelecionado?: string): Promise<Turnover
       iso,
       dia,
       label: `${dia}/${mesLbl}`,
-      ativos: quadroAtivoEmDia(iso, congelado, pessoas),
-      congelado: congelado.has(iso),
+      ativos: quadroDiario.get(iso) ?? null,
+    }
+  })
+
+  // --- Admissões e desligamentos por dia (mês selecionado) ---
+  const movimentacaoDiaria: PontoMovimentacaoDiaria[] = diasMesSelecionado.map((iso) => {
+    const dia = iso.slice(8, 10)
+    const mesLbl = iso.slice(5, 7)
+    return {
+      iso,
+      dia,
+      label: `${dia}/${mesLbl}`,
+      admissoes: movimentacoes.admissoes.get(iso) ?? 0,
+      desligamentos: movimentacoes.desligamentos.get(iso) ?? 0,
     }
   })
 
   // --- Série mensal (últimos 12 meses corridos, ou desde a primeira admissão se for mais recente) ---
-  const primeiraAdmissao = pessoas
-    .map((p) => p.dtAdmissao)
-    .filter((d): d is string => !!d)
-    .sort()[0]
+  const primeiraAdmissao = Array.from(movimentacoes.admissoes.keys()).sort()[0]
   const doze = new Date(hojeIso)
   doze.setMonth(doze.getMonth() - 11)
   const inicioJanela = doze.toISOString().slice(0, 7)
@@ -310,18 +343,19 @@ export async function getTurnoverData(mesSelecionado?: string): Promise<Turnover
 
   const meseSerie = mesesEntre(mesInicioSerie, mesAtualCalendario)
   const serieMensal: PontoMensal[] = meseSerie.map((m) => {
-    const adm = pessoas.filter((p) => mesDe(p.dtAdmissao) === m).length
-    const desl = pessoas.filter((p) => mesDe(p.dtDemissao) === m).length
-    const qMedio = quadroMedioDoMes(m, hojeIso, congelado, pessoas)
-    const taxa = qMedio > 0 ? Math.round(((desl / qMedio) * 100 + Number.EPSILON) * 10) / 10 : 0
+    const adm = somaNoMes(movimentacoes.admissoes, m)
+    const desl = somaNoMes(movimentacoes.desligamentos, m)
+    const qMedio = quadroMedioDoMes(m, quadroDiario)
+    const taxa = qMedio && qMedio > 0 ? arredonda1((desl / qMedio) * 100) : null
     return { mes: m, label: labelMes(m), admissoes: adm, desligamentos: desl, taxaTurnoverPct: taxa }
   })
 
-  // --- Tempo de casa (distribuição dos ativos hoje) ---
-  const ativos = pessoas.filter((p) => ativoEm(p, hojeIso) && p.dtAdmissao)
+  // --- Tempo de casa (distribuição dos ativos no último dia registrado) ---
+  const dataRefTempoCasa = ultimoDiaRegistrado ?? hojeIso
+  const ativos = pessoas.filter((p) => ativoEm(p, dataRefTempoCasa) && p.dtAdmissao)
   const contagem = new Map<string, number>(ORDEM_FAIXAS.map((f) => [f, 0]))
   for (const p of ativos) {
-    const f = faixaTempoCasa(p.dtAdmissao as string, hojeIso)
+    const f = faixaTempoCasa(p.dtAdmissao as string, dataRefTempoCasa)
     contagem.set(f, (contagem.get(f) ?? 0) + 1)
   }
   const tempoCasa: FaixaTempoCasa[] = ORDEM_FAIXAS.map((f) => ({ faixa: f, quantidade: contagem.get(f) ?? 0 }))
@@ -345,6 +379,7 @@ export async function getTurnoverData(mesSelecionado?: string): Promise<Turnover
     kpis: { quadroAtivoAtual, admissoesMes, desligamentosMes, taxaTurnoverPct },
     serieMensal,
     headcountDiario,
+    movimentacaoDiaria,
     tempoCasa,
     desligadosRecentes,
   }

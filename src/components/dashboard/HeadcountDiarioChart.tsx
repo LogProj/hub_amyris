@@ -22,6 +22,14 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   const ponto = payload[0]?.payload
   if (!ponto) return null
+  if (ponto.ativos == null) {
+    return (
+      <div className="rounded-xl border border-amyris/10 bg-white/90 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_rgba(75,0,133,0.4)] backdrop-blur-xl">
+        <p className="mb-1 font-semibold text-foreground">{label}</p>
+        <p className="text-muted-foreground">Sem quadro registrado neste dia</p>
+      </div>
+    )
+  }
   return (
     <div className="rounded-xl border border-amyris/10 bg-white/90 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_rgba(75,0,133,0.4)] backdrop-blur-xl">
       <p className="mb-1.5 font-semibold text-foreground">{label}</p>
@@ -30,16 +38,16 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
         Ativos
         <span className="ml-3 font-semibold tabular-nums text-foreground">{ponto.ativos}</span>
       </p>
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        {ponto.congelado ? "Snapshot congelado do dia" : "Reconstruído (sem snapshot congelado)"}
-      </p>
     </div>
   )
 }
 
-/** Headcount de ativos por dia do mês selecionado (congelado quando disponível, reconstruído como fallback). */
+/**
+ * Headcount de ativos por dia do mês selecionado, exatamente como registrado.
+ * Dias sem registro ficam no eixo, mas sem ponto/linha (lacuna visível).
+ */
 export function HeadcountDiarioChart({ dados }: { dados: PontoHeadcountDiario[] }) {
-  const maxAtivos = Math.max(1, ...dados.map((p) => p.ativos))
+  const maxAtivos = Math.max(1, ...dados.map((p) => p.ativos ?? 0))
   const topo = Math.ceil((maxAtivos + 1) / 5) * 5
 
   return (
@@ -70,7 +78,8 @@ export function HeadcountDiarioChart({ dados }: { dados: PontoHeadcountDiario[] 
             stroke="#4B0085"
             strokeWidth={3}
             fill="url(#fillHeadcountDiario)"
-            dot={false}
+            connectNulls={false}
+            dot={{ r: 2.5, fill: "#4B0085", stroke: "#fff", strokeWidth: 1 }}
             activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
             animationDuration={1100}
             animationEasing="ease-out"
