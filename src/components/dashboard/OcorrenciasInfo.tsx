@@ -94,14 +94,11 @@ export function OcorrenciasInfo() {
                   </h3>
                   <p className="mt-3 text-muted-foreground">
                     Das <b className="text-foreground">ocorrências de segurança registradas na
-                    unidade Barra Bonita</b> que <b className="text-foreground">não envolvem
-                    pessoas</b> — ou seja, <b className="text-foreground">sem acidentes nem
-                    lesões</b>. Entram apenas <b className="text-foreground">condições
-                    inseguras</b>, <b className="text-foreground">atos inseguros</b> e{" "}
-                    <b className="text-foreground">incidentes materiais</b> (avarias, danos a
-                    equipamentos, derramamentos). O painel mostra sempre o{" "}
+                    unidade Barra Bonita</b>. Cada registro guarda o que aconteceu, com quem, em
+                    qual turno, a gravidade e a área. O painel mostra sempre o{" "}
                     <b className="text-foreground">mês selecionado</b> — troque o mês no seletor
-                    ao lado do título.
+                    ao lado do título. Alguns gráficos têm um <b className="text-foreground">botão
+                    de alternância</b> para trocar o indicador exibido (ex.: Turno ↔ PSIF).
                   </p>
                 </section>
 
@@ -115,23 +112,29 @@ export function OcorrenciasInfo() {
                       <b className="text-foreground">variação</b> em relação ao mês anterior
                       (seta para baixo = melhorou, menos ocorrências).
                     </Item>
-                    <Item titulo="Condições inseguras × Atos inseguros">
-                      <b className="text-foreground">Condição insegura</b> é um risco no ambiente
-                      (piso molhado, corredor obstruído). <b className="text-foreground">Ato
-                      inseguro</b> é um comportamento de risco (não usar proteção, atalho
-                      perigoso). Nenhum dos dois envolve pessoa machucada.
+                    <Item titulo="Com CAT aberta">
+                      ocorrências do mês que geraram <b className="text-foreground">CAT</b>{" "}
+                      (Comunicação de Acidente de Trabalho).
                     </Item>
-                    <Item titulo="Por tipo e por classificação">
-                      mostra quais situações mais aconteceram, do maior para o menor — ajuda a
-                      priorizar onde agir.
+                    <Item titulo="Colaboradores">
+                      quantas pessoas diferentes apareceram nas ocorrências do mês.
                     </Item>
-                    <Item titulo="Por turno e por negócio">
-                      em qual turno as ocorrências se concentram e em qual área da operação
-                      (armazenagem, expedição, movimentação, recebimento).
+                    <Item titulo="Por Turno / PSIF (alternável)">
+                      concentração por turno do dia; o botão troca para PSIF.
+                    </Item>
+                    <Item titulo="Classificação GPS / Cliente (alternável)">
+                      classificação de gravidade padrão (GPS) e a do cliente — troque pelo botão.
+                    </Item>
+                    <Item titulo="Parte do Corpo / Negócio (alternável)">
+                      partes do corpo atingidas nos casos com lesão; o botão troca para a área da
+                      operação (negócio).
+                    </Item>
+                    <Item titulo="Top colaboradores e Por tipo">
+                      as pessoas com mais ocorrências e os tipos mais frequentes, do maior para o
+                      menor.
                     </Item>
                     <Item titulo="Calendário e por mês">
-                      os dias com mais registros no mês e a evolução mês a mês ao longo do ano,
-                      para enxergar se o número está subindo ou caindo.
+                      os dias com mais registros no mês e a evolução mês a mês ao longo do ano.
                     </Item>
                   </dl>
 
@@ -144,9 +147,9 @@ export function OcorrenciasInfo() {
                 </Secao>
 
                 <section className="rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 text-xs leading-relaxed text-muted-foreground">
-                  <b className="text-foreground">Observação:</b> os valores exibidos hoje são de{" "}
-                  <b className="text-foreground">demonstração</b>, só para conferir o layout. Os
-                  números reais entram assim que a fonte de dados for ligada.
+                  <b className="text-foreground">Observação:</b> o painel mostra{" "}
+                  <b className="text-foreground">exatamente o que foi registrado</b> no controle
+                  de ocorrências. Meses sem registro aparecem vazios.
                 </section>
               </div>
             </div>

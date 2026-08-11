@@ -22,15 +22,15 @@ export const dynamic = "force-dynamic"
 
 type ResumoAbsenteismo = { aderenciaMediaGeral: number; totalFaltas: number } | null
 type ResumoTurnover = { quadroAtivoAtual: number; taxaTurnoverPct: number | null } | null
-type ResumoOcorrencias = { totalMes: number; condicoesInseguras: number; atosInseguros: number } | null
+type ResumoOcorrencias = { totalMes: number; comCat: number; colaboradores: number } | null
 
 async function getResumoOcorrencias(): Promise<ResumoOcorrencias> {
   try {
     const data = await getOcorrenciasData()
     return {
       totalMes: data.kpis.totalMes,
-      condicoesInseguras: data.kpis.condicoesInseguras,
-      atosInseguros: data.kpis.atosInseguros,
+      comCat: data.kpis.comCat,
+      colaboradores: data.kpis.colaboradores,
     }
   } catch {
     return null
@@ -205,7 +205,7 @@ export default async function DashboardsHome() {
                 )}
                 <p className="text-xs text-muted-foreground">
                   {ocorrencias
-                    ? `${ocorrencias.condicoesInseguras} condições · ${ocorrencias.atosInseguros} atos inseguros`
+                    ? `${ocorrencias.comCat} com CAT · ${ocorrencias.colaboradores} colaboradores`
                     : "Não foi possível consultar agora"}
                 </p>
               </div>
