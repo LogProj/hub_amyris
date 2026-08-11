@@ -1,28 +1,33 @@
+import { ocorrenciasPool } from "@/lib/db-ocorrencias"
+
 /**
  * Controle de Ocorrências — indicador do cliente AMYRIS - BARRA BONITA.
  *
- * Espelha a aba "Controle de Ocorrências" do sistema LogFy, mas RESTRITO a
- * ocorrências que NÃO envolvem pessoas — ou seja, sem acidentes/lesões. Só entram
- * as classificações materiais e comportamentais/ambientais:
- *   - Incidente Material
- *   - Ato Inseguro
- *   - Condição Insegura
- * (Acidentes, primeiros socorros, atendimento ambulatorial, incidente pessoal,
- *  parte do corpo e CAT — tudo que envolve pessoa — ficam de fora.)
+ * LEITURA (apenas) do banco do sistema LogFy (tabelas tb_ocorrencias / tb_cliente),
+ * via pool pg — nunca Prisma, nunca escrita. Mesmo padrão do epi.ts / turnover.ts.
  *
- * ⚠️ POR ENQUANTO: dados de EXEMPLO (placeholder) só para montar o visual no hub.
- * A forma dos dados é a mesma do painel real; quando a fonte for ligada, basta
- * preencher este formato — a página e os gráficos não mudam.
+ * RESTRITO a ocorrências que NÃO envolvem pessoas — sem acidentes/lesões. Só entram
+ * as classificações materiais e comportamentais/ambientais (ver GPS_SEM_PESSOA).
+ *
+ * O cliente vem da env OCORRENCIAS_CLIENTE (default: AMYRIS - BARRA BONITA).
+ * Módulo server-only.
  */
+
+const CLIENTE_NOME = process.env.OCORRENCIAS_CLIENTE || "AMYRIS - BARRA BONITA"
+
+// Classificações (classificacao_gps) que NÃO envolvem pessoa — as únicas exibidas.
+const GPS_SEM_PESSOA = ["Incidente Material", "Ato Inseguro", "Condição Insegura"]
+
+const MESES_NOMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
 export type OcorrenciaLinha = {
   id: string
   data: string // YYYY-MM-DD
   hora: string
-  colaborador: string // quem reportou
+  colaborador: string
   tipo: string
   turno: string
-  gps: string // classificação (não-pessoa)
+  gps: string
   negocio: string
   local: string
 }
@@ -49,76 +54,160 @@ export type OcorrenciasData = {
   recentes: OcorrenciaLinha[]
 }
 
-const MESES_EXEMPLO = ["2026-08", "2026-07", "2026-06", "2026-05", "2026-04", "2026-03"]
+function mesAnteriorDe(mes: string): string {
+  const [a, m] = mes.split("-").map(Number)
+  const d = new Date(Date.UTC(a, m - 2, 1))
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
+}
 
-const LINHAS: OcorrenciaLinha[] = [
-  { id: "OC-1042", data: "2026-08-27", hora: "14:20", colaborador: "João P. Silva", tipo: "Condição Insegura", turno: "1º Turno", gps: "Condição Insegura", negocio: "Armazenagem", local: "Doca 3" },
-  { id: "OC-1040", data: "2026-08-22", hora: "09:05", colaborador: "Maria A. Souza", tipo: "Ato Inseguro", turno: "2º Turno", gps: "Ato Inseguro", negocio: "Expedição", local: "Corredor B" },
-  { id: "OC-1037", data: "2026-08-15", hora: "22:40", colaborador: "Carlos E. Lima", tipo: "Avaria de equipamento", turno: "3º Turno", gps: "Incidente Material", negocio: "Movimentação", local: "Porta-pallet 12" },
-  { id: "OC-1035", data: "2026-08-15", hora: "11:15", colaborador: "Ana R. Costa", tipo: "Ato Inseguro", turno: "1º Turno", gps: "Ato Inseguro", negocio: "Recebimento", local: "Doca 1" },
-  { id: "OC-1032", data: "2026-08-12", hora: "16:50", colaborador: "Pedro H. Alves", tipo: "Condição Insegura", turno: "2º Turno", gps: "Condição Insegura", negocio: "Armazenagem", local: "Rua 07" },
-  { id: "OC-1029", data: "2026-08-09", hora: "08:30", colaborador: "Bruno T. Rocha", tipo: "Derramamento", turno: "1º Turno", gps: "Incidente Material", negocio: "Movimentação", local: "Área externa" },
-  { id: "OC-1026", data: "2026-08-05", hora: "13:10", colaborador: "Rafael M. Dias", tipo: "Condição Insegura", turno: "1º Turno", gps: "Condição Insegura", negocio: "Expedição", local: "Doca 5" },
-  { id: "OC-1023", data: "2026-08-02", hora: "19:45", colaborador: "Letícia F. Nunes", tipo: "Ato Inseguro", turno: "2º Turno", gps: "Ato Inseguro", negocio: "Armazenagem", local: "Rua 02" },
-]
+export async function getOcorrenciasData(mesEntrada?: string): Promise<OcorrenciasData> {
+  // Resolve o cliente pelo nome (linha em tb_cliente).
+  const cliQ = await ocorrenciasPool.query<{ id: string; cliente: string }>(
+    "select id, cliente from tb_cliente where cliente = $1 limit 1",
+    [CLIENTE_NOME],
+  )
+  const cliente = cliQ.rows[0]
+  if (!cliente) {
+    throw new Error(`Cliente "${CLIENTE_NOME}" não encontrado no controle de ocorrências.`)
+  }
+  const clienteId = cliente.id
 
-export function getOcorrenciasData(mesEntrada?: string): OcorrenciasData {
-  const mes = mesEntrada && /^\d{4}-\d{2}$/.test(mesEntrada) ? mesEntrada : MESES_EXEMPLO[0]
+  // Filtro comum: cliente + só classificações sem pessoa.
+  const base = "cliente_id = $1 and classificacao_gps = any($2)"
+  const paramsBase = [clienteId, GPS_SEM_PESSOA]
 
-  // Calendário do mês (dias com/sem ocorrência) — 8 ocorrências.
-  const diasComOcorrencia: Record<number, number> = { 2: 1, 5: 1, 9: 1, 12: 1, 15: 2, 22: 1, 27: 1 }
-  const calendario = Array.from({ length: 31 }, (_, i) => ({ dia: i + 1, count: diasComOcorrencia[i + 1] ?? 0 }))
+  // Meses disponíveis (com ocorrências sem pessoa).
+  const mesesQ = await ocorrenciasPool.query<{ m: string }>(
+    `select distinct to_char(data, 'YYYY-MM') m from tb_ocorrencias where ${base} order by m desc`,
+    paramsBase,
+  )
+  const mesesDisp = mesesQ.rows.map((r) => r.m)
+  const mes =
+    mesEntrada && /^\d{4}-\d{2}$/.test(mesEntrada) ? mesEntrada : mesesDisp[0] ?? new Date().toISOString().slice(0, 7)
+  const meses = Array.from(new Set([mes, ...mesesDisp])).sort((a, b) => (a < b ? 1 : -1))
+  const mesAnt = mesAnteriorDe(mes)
+
+  const [
+    totalQ,
+    mesQ,
+    mesAntQ,
+    condicoesQ,
+    atosQ,
+    porTurnoQ,
+    porClassQ,
+    porTipoQ,
+    porNegocioQ,
+    porMesQ,
+    calendarioQ,
+    recentesQ,
+  ] = await Promise.all([
+    ocorrenciasPool.query<{ n: string }>(`select count(*)::int n from tb_ocorrencias where ${base}`, paramsBase),
+    ocorrenciasPool.query<{ n: string }>(
+      `select count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3`,
+      [...paramsBase, mes],
+    ),
+    ocorrenciasPool.query<{ n: string }>(
+      `select count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3`,
+      [...paramsBase, mesAnt],
+    ),
+    ocorrenciasPool.query<{ n: string }>(
+      `select count(*)::int n from tb_ocorrencias where cliente_id = $1 and classificacao_gps = 'Condição Insegura' and to_char(data,'YYYY-MM') = $2`,
+      [clienteId, mes],
+    ),
+    ocorrenciasPool.query<{ n: string }>(
+      `select count(*)::int n from tb_ocorrencias where cliente_id = $1 and classificacao_gps = 'Ato Inseguro' and to_char(data,'YYYY-MM') = $2`,
+      [clienteId, mes],
+    ),
+    ocorrenciasPool.query<{ turno: string; n: string }>(
+      `select coalesce(nullif(turno,''),'—') turno, count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3 group by 1 order by n desc`,
+      [...paramsBase, mes],
+    ),
+    ocorrenciasPool.query<{ classificacao: string; n: string }>(
+      `select classificacao_gps classificacao, count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3 group by 1 order by n desc`,
+      [...paramsBase, mes],
+    ),
+    ocorrenciasPool.query<{ tipo: string; n: string }>(
+      `select coalesce(nullif(tipo_ocorrencia,''),'—') tipo, count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3 group by 1 order by n desc limit 8`,
+      [...paramsBase, mes],
+    ),
+    ocorrenciasPool.query<{ negocio: string; n: string }>(
+      `select coalesce(nullif(negocios,''),'—') negocio, count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3 group by 1 order by n desc limit 8`,
+      [...paramsBase, mes],
+    ),
+    ocorrenciasPool.query<{ mm: string; n: string }>(
+      `select to_char(data,'MM') mm, count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY') = $3 group by 1`,
+      [...paramsBase, mes.slice(0, 4)],
+    ),
+    ocorrenciasPool.query<{ dia: string; n: string }>(
+      `select extract(day from data)::int dia, count(*)::int n from tb_ocorrencias where ${base} and to_char(data,'YYYY-MM') = $3 group by 1`,
+      [...paramsBase, mes],
+    ),
+    ocorrenciasPool.query<{
+      id: string
+      data: string
+      hora: string | null
+      colaborador: string | null
+      tipo: string | null
+      turno: string | null
+      gps: string | null
+      negocio: string | null
+      local: string | null
+    }>(
+      `select coalesce(nullif(anomalia_sap,''), left(id::text,8)) id,
+              to_char(data,'YYYY-MM-DD') "data", hora, colaborador,
+              tipo_ocorrencia tipo, turno, classificacao_gps gps,
+              negocios negocio, local_ocr "local"
+         from tb_ocorrencias
+        where ${base} and to_char(data,'YYYY-MM') = $3
+        order by data desc, hora desc
+        limit 50`,
+      [...paramsBase, mes],
+    ),
+  ])
+
+  const totalMes = Number(mesQ.rows[0]?.n ?? 0)
+  const mesAnterior = Number(mesAntQ.rows[0]?.n ?? 0)
+  const variacaoPct =
+    mesAnterior > 0
+      ? Math.round(((totalMes - mesAnterior) / mesAnterior) * 100)
+      : totalMes > 0
+        ? 100
+        : null
+
+  const porMesMap = new Map(porMesQ.rows.map((r) => [Number(r.mm), Number(r.n)]))
+  const calMap = new Map(calendarioQ.rows.map((r) => [Number(r.dia), Number(r.n)]))
+  const [ano, mm] = mes.split("-").map(Number)
+  const diasNoMes = new Date(ano, mm, 0).getDate()
 
   return {
     mes,
     mesAtual: mes,
-    meses: MESES_EXEMPLO,
-    clienteLabel: "AMYRIS - BARRA BONITA",
+    meses,
+    clienteLabel: cliente.cliente,
     kpis: {
-      total: 47,
-      totalMes: 8,
-      mesAnterior: 10,
-      variacaoPct: -20,
-      condicoesInseguras: 3,
-      atosInseguros: 3,
+      total: Number(totalQ.rows[0]?.n ?? 0),
+      totalMes,
+      mesAnterior,
+      variacaoPct,
+      condicoesInseguras: Number(condicoesQ.rows[0]?.n ?? 0),
+      atosInseguros: Number(atosQ.rows[0]?.n ?? 0),
     },
-    calendario,
-    porMes: [
-      { mes: "Jan", count: 4 },
-      { mes: "Fev", count: 5 },
-      { mes: "Mar", count: 7 },
-      { mes: "Abr", count: 5 },
-      { mes: "Mai", count: 6 },
-      { mes: "Jun", count: 4 },
-      { mes: "Jul", count: 10 },
-      { mes: "Ago", count: 8 },
-      { mes: "Set", count: 0 },
-      { mes: "Out", count: 0 },
-      { mes: "Nov", count: 0 },
-      { mes: "Dez", count: 0 },
-    ],
-    porTurno: [
-      { turno: "1º Turno", count: 4 },
-      { turno: "2º Turno", count: 3 },
-      { turno: "3º Turno", count: 1 },
-    ],
-    porClassificacao: [
-      { classificacao: "Condição Insegura", count: 3 },
-      { classificacao: "Ato Inseguro", count: 3 },
-      { classificacao: "Incidente Material", count: 2 },
-    ],
-    porTipo: [
-      { tipo: "Condição Insegura", count: 3 },
-      { tipo: "Ato Inseguro", count: 3 },
-      { tipo: "Avaria de equipamento", count: 1 },
-      { tipo: "Derramamento", count: 1 },
-    ],
-    porNegocio: [
-      { negocio: "Armazenagem", count: 3 },
-      { negocio: "Expedição", count: 2 },
-      { negocio: "Movimentação", count: 2 },
-      { negocio: "Recebimento", count: 1 },
-    ],
-    recentes: LINHAS,
+    calendario: Array.from({ length: diasNoMes }, (_, i) => ({ dia: i + 1, count: calMap.get(i + 1) ?? 0 })),
+    porMes: MESES_NOMES.map((nome, i) => ({ mes: nome, count: porMesMap.get(i + 1) ?? 0 })),
+    porTurno: porTurnoQ.rows.map((r) => ({ turno: r.turno, count: Number(r.n) })),
+    porClassificacao: porClassQ.rows.map((r) => ({ classificacao: r.classificacao, count: Number(r.n) })),
+    porTipo: porTipoQ.rows.map((r) => ({ tipo: r.tipo, count: Number(r.n) })),
+    porNegocio: porNegocioQ.rows.map((r) => ({ negocio: r.negocio, count: Number(r.n) })),
+    recentes: recentesQ.rows.map((r) => ({
+      id: r.id,
+      data: r.data,
+      hora: r.hora ?? "—",
+      colaborador: r.colaborador ?? "—",
+      tipo: r.tipo ?? "—",
+      turno: r.turno ?? "—",
+      gps: r.gps ?? "—",
+      negocio: r.negocio ?? "—",
+      local: r.local ?? "—",
+    })),
   }
 }

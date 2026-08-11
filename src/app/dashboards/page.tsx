@@ -22,6 +22,20 @@ export const dynamic = "force-dynamic"
 
 type ResumoAbsenteismo = { aderenciaMediaGeral: number; totalFaltas: number } | null
 type ResumoTurnover = { quadroAtivoAtual: number; taxaTurnoverPct: number | null } | null
+type ResumoOcorrencias = { totalMes: number; condicoesInseguras: number; atosInseguros: number } | null
+
+async function getResumoOcorrencias(): Promise<ResumoOcorrencias> {
+  try {
+    const data = await getOcorrenciasData()
+    return {
+      totalMes: data.kpis.totalMes,
+      condicoesInseguras: data.kpis.condicoesInseguras,
+      atosInseguros: data.kpis.atosInseguros,
+    }
+  } catch {
+    return null
+  }
+}
 
 async function getResumoAbsenteismo(): Promise<ResumoAbsenteismo> {
   try {
@@ -48,8 +62,11 @@ async function getResumoTurnover(): Promise<ResumoTurnover> {
 }
 
 export default async function DashboardsHome() {
-  const [absenteismo, turnover] = await Promise.all([getResumoAbsenteismo(), getResumoTurnover()])
-  const ocorrencias = getOcorrenciasData()
+  const [absenteismo, turnover, ocorrencias] = await Promise.all([
+    getResumoAbsenteismo(),
+    getResumoTurnover(),
+    getResumoOcorrencias(),
+  ])
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -176,14 +193,20 @@ export default async function DashboardsHome() {
                   <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <p className="mt-5 text-sm font-medium text-foreground">Controle de Ocorrências</p>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-display text-2xl font-semibold text-foreground">
-                    {ocorrencias.kpis.totalMes}
-                  </span>
-                  <span className="text-xs text-muted-foreground">ocorrências no mês</span>
-                </div>
+                {ocorrencias ? (
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="font-display text-2xl font-semibold text-foreground">
+                      {ocorrencias.totalMes}
+                    </span>
+                    <span className="text-xs text-muted-foreground">ocorrências no mês</span>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">Indicador indisponível</p>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  {ocorrencias.kpis.condicoesInseguras} condições · {ocorrencias.kpis.atosInseguros} atos inseguros
+                  {ocorrencias
+                    ? `${ocorrencias.condicoesInseguras} condições · ${ocorrencias.atosInseguros} atos inseguros`
+                    : "Não foi possível consultar agora"}
                 </p>
               </div>
             </Link>

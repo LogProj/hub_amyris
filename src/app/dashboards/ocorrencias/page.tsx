@@ -51,7 +51,35 @@ export default async function OcorrenciasPage({ searchParams }: { searchParams: 
     )
   }
 
-  const data: OcorrenciasData = getOcorrenciasData(searchParams.mes)
+  let data: OcorrenciasData | null = null
+  let erro: string | null = null
+  try {
+    data = await getOcorrenciasData(searchParams.mes)
+  } catch (e) {
+    erro = e instanceof Error ? e.message : "Falha ao consultar as ocorrências."
+  }
+
+  if (erro || !data) {
+    return (
+      <div className="w-full space-y-6">
+        <div className="reveal">
+          <span className="eyebrow">Segurança</span>
+          <div className="mt-3 flex items-center gap-2.5">
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Controle de Ocorrências</h1>
+            <OcorrenciasInfo />
+          </div>
+        </div>
+        <div role="alert" className="flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">Não foi possível carregar o painel de Ocorrências.</p>
+            <p className="mt-1 text-destructive/80">{erro}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const variacao = data.kpis.variacaoPct
 
   return (
