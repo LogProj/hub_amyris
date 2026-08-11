@@ -54,7 +54,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboards/absenteismo", label: "Absenteísmo", icon: Users },
       { href: "/dashboards/turnover", label: "Turnover", icon: RefreshCw },
-      { label: "Segurança", icon: HardHat, soon: true },
+      { href: "/dashboards/epi", label: "EPI", icon: HardHat },
     ],
   },
 ]
