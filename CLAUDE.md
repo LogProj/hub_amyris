@@ -1,5 +1,19 @@
 # Instruções do projeto — hub_amyris
 
+## Overlays / z-index — balões, tooltips e dropdowns (OBRIGATÓRIO)
+
+Os cards dos dashboards usam `glass` / `backdrop-blur`, que **criam contexto de
+empilhamento próprio**. Por isso, qualquer conteúdo flutuante (balão de info,
+tooltip, dropdown, popover, menu) posicionado com `absolute` DENTRO de um card
+fica **preso** e aparece ATRÁS dos cards seguintes — mesmo com `z-index` alto.
+
+**Regra:** todo overlay flutuante DEVE ser renderizado em **portal** (`createPortal`
+para `document.body`) com posição **`fixed`** calculada a partir do
+`getBoundingClientRect()` do elemento âncora. Nunca confie só em `absolute` +
+`z-index` dentro de um card. Padrões de referência já corretos:
+`MonthFilter.tsx`, `InfoDica.tsx`, `OcorrenciasInfo.tsx`. (Histórico: os botões de
+info estavam ficando abaixo de outros campos por usarem `absolute`.)
+
 ## Tooltip "info" dos dashboards (OBRIGATÓRIO manter atualizado)
 
 Cada dashboard tem, ao lado do título, um campo **info** (ícone/tooltip) que explica ao
