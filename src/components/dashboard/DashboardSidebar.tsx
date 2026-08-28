@@ -21,6 +21,10 @@ import {
 
 import { cn } from "@/lib/utils"
 import { AmyrisLogo } from "@/components/brand/AmyrisLogo"
+import { HUB_SCREENS } from "@/lib/screens"
+
+// href -> key das telas concedíveis, para filtrar a sidebar por visibilidade.
+const HREF_TO_KEY = new Map(HUB_SCREENS.map((s) => [s.href, s.key]))
 
 type NavItem = {
   href?: string
@@ -71,6 +75,7 @@ export function DashboardSidebar({
   isAdmin = false,
   nome = null,
   email = null,
+  visibleScreens = [],
   onLogout,
   signingOut = false,
 }: {
@@ -78,11 +83,24 @@ export function DashboardSidebar({
   isAdmin?: boolean
   nome?: string | null
   email?: string | null
+  visibleScreens?: string[]
   onLogout?: () => void
   signingOut?: boolean
 }) {
   const pathname = usePathname()
-  const groups = isAdmin ? [...GROUPS, ADMIN_GROUP] : GROUPS
+
+  // Admin vê tudo. Demais só veem os links das telas concedidas (itens "em breve",
+  // sem rota, permanecem visíveis para todos).
+  const podeVerItem = (item: NavItem) => {
+    if (isAdmin || !item.href) return true
+    const key = HREF_TO_KEY.get(item.href)
+    if (!key) return true // rota fora do modelo de visibilidade (ex.: telas admin)
+    return visibleScreens.includes(key)
+  }
+
+  const groups = (isAdmin ? [...GROUPS, ADMIN_GROUP] : GROUPS)
+    .map((group) => ({ ...group, items: group.items.filter(podeVerItem) }))
+    .filter((group) => group.items.length > 0)
 
   return (
     <div className="flex h-full flex-col gap-6 px-4 py-6">

@@ -10,7 +10,7 @@ import { InhausLogo } from "@/components/brand/InhausLogo"
 
 type Sessao = {
   user: { name: string | null; email: string }
-  authorization: { isAdmin: boolean; nome: string | null }
+  authorization: { isAdmin: boolean; nome: string | null; visibleScreens: string[] }
 }
 
 export function DashboardShell({ children }: { children: ReactNode }) {
@@ -40,6 +40,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const isAdmin = sessao?.authorization.isAdmin ?? false
   const nome = sessao?.authorization.nome ?? sessao?.user.name ?? null
   const email = sessao?.user.email ?? null
+  const visibleScreens = sessao?.authorization.visibleScreens ?? []
 
   // trava o scroll do body quando o drawer mobile está aberto
   useEffect(() => {
@@ -67,6 +68,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           isAdmin={isAdmin}
           nome={nome}
           email={email}
+          visibleScreens={visibleScreens}
           onLogout={handleLogout}
           signingOut={signingOut}
         />
@@ -96,6 +98,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             isAdmin={isAdmin}
             nome={nome}
             email={email}
+            visibleScreens={visibleScreens}
             onLogout={handleLogout}
             signingOut={signingOut}
             onNavigate={() => setDrawer(false)}

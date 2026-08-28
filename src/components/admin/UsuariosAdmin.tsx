@@ -11,6 +11,7 @@ import {
   RefreshCw,
   AlertTriangle,
   Search,
+  Monitor,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { UsuarioAdminRow, UsuariosResponse } from "@/lib/admin-types"
+import { HUB_SCREENS } from "@/lib/screens"
 
 const EMPTY_FORM = { nome: "", email: "", cpf: "", senha: "", isAdmin: false }
 
@@ -32,6 +34,9 @@ export function UsuariosAdmin() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [formErro, setFormErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
+  // editor de telas (visibilidade por usuário)
+  const [telasUser, setTelasUser] = useState<UsuarioAdminRow | null>(null)
+  const [telasSel, setTelasSel] = useState<string[]>([])
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -137,6 +142,21 @@ export function UsuariosAdmin() {
     }
   }
 
+  function abrirTelas(u: UsuarioAdminRow) {
+    setTelasUser(u)
+    setTelasSel(u.visibleScreens ?? [])
+  }
+
+  function toggleTela(key: string) {
+    setTelasSel((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
+  }
+
+  async function salvarTelas() {
+    if (!telasUser) return
+    await patch(telasUser, { visibleScreens: telasSel }, `telas:${telasUser.localId}`)
+    setTelasUser(null)
+  }
+
   const filtrados = usuarios.filter((u) => {
     const t = `${u.nome ?? ""} ${u.email}`.toLowerCase()
     return t.includes(q.toLowerCase())
@@ -199,19 +219,20 @@ export function UsuariosAdmin() {
                 <th className="px-4 py-3 font-semibold">Tipo</th>
                 <th className="px-4 py-3 font-semibold">Acesso</th>
                 <th className="px-4 py-3 font-semibold">Admin</th>
+                <th className="px-4 py-3 font-semibold">Telas</th>
                 <th className="px-4 py-3 text-right font-semibold">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                   </td>
                 </tr>
               ) : filtrados.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                     Nenhum usuário encontrado.
                   </td>
                 </tr>
@@ -260,6 +281,23 @@ export function UsuariosAdmin() {
                         )}
                       </td>
                       <td className="px-4 py-3">
+                        {u.comAcesso ? (
+                          u.isAdmin ? (
+                            <span className="text-xs text-muted-foreground">Todas</span>
+                          ) : (
+                            <button
+                              onClick={() => abrirTelas(u)}
+                              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-amyris-mist hover:text-amyris"
+                            >
+                              <Monitor className="h-3 w-3" />
+                              {u.visibleScreens?.length ?? 0} de {HUB_SCREENS.length}
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
                           {u.comAcesso ? (
                             <Button
@@ -301,6 +339,54 @@ export function UsuariosAdmin() {
           </table>
         </div>
       </div>
+
+      {/* modal de telas (visibilidade por usuário) */}
+      {telasUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-amyris-ink/40 backdrop-blur-sm" onClick={() => setTelasUser(null)} />
+          <div className="relative w-full max-w-md rounded-3xl border border-border bg-white p-6 shadow-soft">
+            <h2 className="font-display text-xl font-semibold text-foreground">Telas visíveis</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Escolha os painéis que <span className="font-medium text-foreground">{telasUser.nome ?? telasUser.email}</span> poderá acessar.
+            </p>
+            <div className="mt-5 space-y-1">
+              {HUB_SCREENS.map((s) => (
+                <label
+                  key={s.key}
+                  className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-amyris-mist/40"
+                >
+                  <input
+                    type="checkbox"
+                    checked={telasSel.includes(s.key)}
+                    onChange={() => toggleTela(s.key)}
+                    className="h-4 w-4 rounded border-input accent-amyris"
+                  />
+                  <span className="text-sm text-foreground">{s.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setTelasSel(telasSel.length === HUB_SCREENS.length ? [] : HUB_SCREENS.map((s) => s.key))}
+                className="text-xs font-medium text-amyris hover:underline"
+              >
+                {telasSel.length === HUB_SCREENS.length ? "Desmarcar todas" : "Marcar todas"}
+              </button>
+              <span className="text-xs text-muted-foreground">{telasSel.length} selecionada(s)</span>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setTelasUser(null)} disabled={busy === `telas:${telasUser.localId}`}>
+                Cancelar
+              </Button>
+              <Button type="button" variant="gradient" onClick={salvarTelas} disabled={busy === `telas:${telasUser.localId}`}>
+                {busy === `telas:${telasUser.localId}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* modal de criação */}
       {showForm && (
