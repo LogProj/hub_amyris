@@ -25,18 +25,27 @@ export default function FormulariosPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8F82A0]">Disponível agora</p>
         <Link
           href="/formularios/carregamento"
-          className="relative flex items-center gap-3 overflow-hidden rounded-[26px] p-4 text-white shadow-[0_0_0_1px_rgba(124,58,237,.14),0_14px_34px_-16px_rgba(75,0,133,.45)] transition motion-safe:animate-pulse-glow active:scale-[.985]"
-          style={{ background: GRAD }}
+          className="relative flex items-center gap-3.5 overflow-hidden rounded-[26px] border border-white/60 bg-[rgba(255,255,255,.72)] p-[18px] text-left shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_18px_50px_-24px_rgba(75,0,133,.4)] backdrop-blur-[24px] transition motion-safe:animate-pulse-glow active:scale-[.985]"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/15">
-            <Truck className="h-5 w-5" />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-[26px]"
+            style={{ background: "radial-gradient(420px circle at 12% 0%, rgba(124,58,237,.14), transparent 62%)" }}
+          />
+          <span
+            className="relative grid h-12 w-12 flex-none place-items-center rounded-[16px] text-white shadow-[0_10px_24px_-12px_rgba(75,0,133,.7)]"
+            style={{ background: GRAD }}
+          >
+            <Truck className="h-[22px] w-[22px]" />
           </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">Ronda</span>
-            <span className="font-display text-lg font-semibold">Carregamento</span>
-            <span className="text-xs text-white/80">Equipe, EPIs, veículo e lacres</span>
+          <span className="relative flex min-w-0 flex-1 flex-col gap-[3px]">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7C3AED]">Ronda</span>
+            <span className="font-display text-[17px] font-semibold tracking-[-0.01em] text-[#201429]">Carregamento</span>
+            <span className="text-xs text-[#6D5E78]">Equipe, EPIs, veículo e lacres</span>
           </span>
-          <ChevronRight className="h-5 w-5 text-white/80" />
+          <span className="relative grid h-[34px] w-[34px] flex-none place-items-center rounded-xl bg-[#F4F0FB] text-[#4B0085]">
+            <ChevronRight className="h-[18px] w-[18px]" />
+          </span>
         </Link>
         <Link
           href="/formularios/historico"
