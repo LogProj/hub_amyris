@@ -13,7 +13,7 @@ const ACCESS_COOKIE = `${COOKIE_PREFIX}_access_token`
 const REFRESH_COOKIE = `${COOKIE_PREFIX}_refresh_token`
 
 // Prefixos de rota que exigem sessão.
-const protectedRoutes = ["/dashboards"]
+const protectedRoutes = ["/dashboards", "/formularios"]
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -38,5 +38,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboards/:path*", "/login"],
+  matcher: ["/dashboards/:path*", "/formularios/:path*", "/login"],
 }
