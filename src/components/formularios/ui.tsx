@@ -20,7 +20,7 @@ export function Cartao({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-[#EDE4F5] bg-white p-4 shadow-[0_1px_2px_rgba(26,11,46,.04),0_12px_28px_-18px_rgba(75,0,133,.25)]">
+    <section className="rounded-[24px] border border-[#EDE4F5] bg-white p-4 shadow-[0_1px_2px_rgba(26,11,46,.04),0_12px_28px_-18px_rgba(75,0,133,.25)]">
       <header className="mb-3 flex items-center gap-3">
         <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#F4F0FB] text-[#4B0085]">
           <Icone className="h-[18px] w-[18px]" />

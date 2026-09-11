@@ -89,10 +89,19 @@ const config: Config = {
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
+        "pulse-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 0 1px rgba(124,58,237,.14), 0 14px 34px -16px rgba(75,0,133,.45)",
+          },
+          "50%": {
+            boxShadow: "0 0 0 1px rgba(124,58,237,.28), 0 20px 46px -14px rgba(75,0,133,.62)",
+          },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.7s cubic-bezier(0.16,1,0.3,1) both",
         float: "float 6s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 3.4s ease-in-out infinite",
       },
     },
   },
