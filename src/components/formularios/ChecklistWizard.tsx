@@ -15,6 +15,7 @@ import { EtapaEpis } from "./EtapaEpis"
 import { EtapaEquipe } from "./EtapaEquipe"
 import { EtapaResponsaveis } from "./EtapaResponsaveis"
 import { EtapaVeiculo } from "./EtapaVeiculo"
+import { NAV_HEIGHT } from "./navMetrics"
 import { OperadoresSheet } from "./OperadoresSheet"
 import { GRAD } from "./ui"
 import { useRascunho } from "./useRascunho"
@@ -255,12 +256,18 @@ export function ChecklistWizard({
 
       {falhaEnvio && <p className="mt-4 rounded-xl bg-[rgba(217,45,45,.08)] p-3 text-sm font-medium text-[#C42B2B]">{falhaEnvio}</p>}
 
-      <div className="fixed inset-x-0 bottom-[76px] z-20 mx-auto w-full max-w-[430px] bg-gradient-to-t from-[#FBF9FE] via-[#FBF9FE] to-transparent px-5 pb-3 pt-6">
+      {/* bottom = NAV_HEIGHT (navMetrics.ts): mesma altura total, dinâmica, que a
+          BottomNav renderiza (conteúdo + borda + área segura), então a CTA nunca fica
+          coberta pela nav nem some para dentro do home indicator. */}
+      <div
+        className="fixed inset-x-0 z-20 mx-auto w-full max-w-[430px] bg-gradient-to-t from-[#FBF9FE] via-[#FBF9FE] to-transparent px-5 pb-3 pt-6"
+        style={{ bottom: NAV_HEIGHT }}
+      >
         <button
           type="button"
           disabled={enviando}
           onClick={() => (etapa === 4 ? enviar() : irPara((etapa + 1) as Etapa))}
-          className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] font-display font-semibold text-white transition active:scale-[.985] disabled:opacity-70"
+          className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[18px] font-display text-[15px] font-semibold text-white transition active:scale-[.985] disabled:opacity-70"
           style={{ background: GRAD, boxShadow: "0 0 0 1px rgba(124,58,237,.2), 0 16px 34px -14px rgba(75,0,133,.8)" }}
         >
           {enviando ? <Loader2 className="h-5 w-5 animate-spin" /> : null}

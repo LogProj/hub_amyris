@@ -3,6 +3,12 @@ import { AmyrisLogo } from "@/components/brand/AmyrisLogo"
 import { nomeCurto } from "@/lib/formularios/regras"
 import { GRAD } from "./ui"
 import { BottomNav } from "./BottomNav"
+import { NAV_HEIGHT } from "./navMetrics"
+
+// Respiro extra além da altura da nav: cobre a barra de CTA fixa que o wizard do
+// Checklist de Carregamento desenha por cima do conteúdo (ver ChecklistWizard.tsx),
+// para o último card da página nunca ficar escondido atrás dela + da nav.
+const MAIN_BOTTOM_PAD = `calc(${NAV_HEIGHT} + 96px)`
 
 export function MobileShell({ nome, children }: { nome: string; children: React.ReactNode }) {
   return (
@@ -23,7 +29,9 @@ export function MobileShell({ nome, children }: { nome: string; children: React.
             {nomeCurto(nome)}
           </span>
         </header>
-        <main className="flex-1 px-5 pb-40">{children}</main>
+        <main className="flex-1 px-5" style={{ paddingBottom: MAIN_BOTTOM_PAD }}>
+          {children}
+        </main>
         <BottomNav />
       </div>
     </div>

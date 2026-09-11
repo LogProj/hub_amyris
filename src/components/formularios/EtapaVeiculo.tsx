@@ -61,7 +61,7 @@ export function EtapaVeiculo({
             <button
               type="button"
               onClick={() => onLacres([...lacres, ""])}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-[rgba(124,58,237,.42)] bg-[rgba(244,240,251,.7)] text-[13px] font-semibold text-[#4B0085] hover:border-[#7C3AED] hover:bg-[#F4F0FB]"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-[rgba(124,58,237,.42)] bg-[rgba(244,240,251,.7)] text-[13px] font-semibold text-[#4B0085] hover:border-[#7C3AED] hover:bg-[#F4F0FB]"
             >
               <Plus className="h-4 w-4" /> Adicionar lacre
             </button>

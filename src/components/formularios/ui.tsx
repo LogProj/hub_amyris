@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 export const GRAD = "linear-gradient(135deg,#4B0085 0%,#7C3AED 55%,#A78BFA 100%)"
 
 export const classeInput =
-  "h-11 w-full rounded-xl border border-[#E7DEED] bg-white px-3 text-[15px] text-[#201429] outline-none transition placeholder:text-[#B5A9C4] focus:border-[rgba(75,0,133,.5)] focus:shadow-[0_0_0_3px_rgba(75,0,133,.16)]"
+  "h-[46px] w-full rounded-[14px] border border-[#E7DEED] bg-white px-3 text-[15px] text-[#201429] outline-none transition placeholder:text-[#B5A9C4] focus:border-[rgba(75,0,133,.5)] focus:shadow-[0_0_0_3px_rgba(75,0,133,.16)]"
 
 export function Cartao({
   icone: Icone,
