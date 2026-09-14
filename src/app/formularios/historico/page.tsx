@@ -43,7 +43,8 @@ export default async function HistoricoPage({
       listarHistorico({ mes: mes ?? undefined, pagina }),
       listarMesesHistorico(),
     ])
-  } catch {
+  } catch (e) {
+    console.error("historico lista:", e)
     erro = true
   }
 
@@ -56,9 +57,11 @@ export default async function HistoricoPage({
           <History className="h-3.5 w-3.5" /> Carregamento
         </span>
         <h1 className="mt-3 font-display text-[26px] font-semibold tracking-tight text-[#201429]">Histórico</h1>
-        <p className="mt-1 text-sm text-[#6B5E7B]">
-          {dados.total} checklist{dados.total === 1 ? "" : "s"} {mes ? "neste mês" : "no total"}, dos mais recentes para os mais antigos.
-        </p>
+        {!erro && (
+          <p className="mt-1 text-sm text-[#6B5E7B]">
+            {dados.total} checklist{dados.total === 1 ? "" : "s"} {mes ? "neste mês" : "no total"}, dos mais recentes para os mais antigos.
+          </p>
+        )}
       </div>
 
       <FiltroMes meses={meses} atual={mes} />

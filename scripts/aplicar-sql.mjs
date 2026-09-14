@@ -1,5 +1,8 @@
 // Aplica um arquivo .sql no DATABASE_URL (db_inhaus COMPARTILHADO).
-// Recusa qualquer arquivo com comandos destrutivos. Uso: node scripts/aplicar-sql.mjs <arquivo.sql>
+// ALLOW-LIST: só roda o arquivo se TODA instrução nele for uma das permitidas abaixo.
+// Qualquer outra coisa (view/function, grant/revoke, update em tabela alheia, insert
+// fora do padrão "on conflict do nothing" etc.) é recusada, com o arquivo INTEIRO
+// rejeitado sem conectar no banco. Uso: node scripts/aplicar-sql.mjs <arquivo.sql>
 import fs from "node:fs"
 import pg from "pg"
 
@@ -10,9 +13,38 @@ if (!arquivo) {
 }
 
 const sql = fs.readFileSync(arquivo, "utf8")
-if (/\b(drop|truncate|alter)\b|\bdelete\s+from\b/i.test(sql)) {
-  console.error("Recusado: o arquivo contém DROP/TRUNCATE/ALTER/DELETE FROM.")
-  process.exit(1)
+
+// Remove comentários de linha (--) e divide em instruções por ";".
+function dividirEmInstrucoes(texto) {
+  const semComentarios = texto
+    .split("\n")
+    .map((linha) => {
+      const i = linha.indexOf("--")
+      return i === -1 ? linha : linha.slice(0, i)
+    })
+    .join("\n")
+  return semComentarios
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+}
+
+const PERMITIDAS = [
+  /^begin$/i,
+  /^commit$/i,
+  /^create\s+table\s+if\s+not\s+exists\s+/i,
+  /^create\s+index\s+if\s+not\s+exists\s+/i,
+  /^insert\s+into\s+.+\son\s+conflict\s+.+\sdo\s+nothing$/is,
+]
+
+const instrucoes = dividirEmInstrucoes(sql)
+for (const instrucao of instrucoes) {
+  const ok = PERMITIDAS.some((re) => re.test(instrucao))
+  if (!ok) {
+    console.error("Recusado: instrução não permitida pela allow-list:")
+    console.error(instrucao)
+    process.exit(1)
+  }
 }
 
 function lerEnvLocal() {

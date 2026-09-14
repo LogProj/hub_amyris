@@ -40,6 +40,7 @@ export function EtapaResponsaveis({
               placeholder={supervisores.length ? "Escolher supervisor" : "Nenhum Supervisor de Logística ativo hoje"}
               onAbrir={() => supervisores.length > 0 && setPainel("supervisor")}
               invalido={!!erros.supervisorCpf}
+              desabilitado={supervisores.length === 0}
             />
           </Campo>
           <Campo rotulo="Líder responsável" erro={erros.liderCpf}>
@@ -48,6 +49,7 @@ export function EtapaResponsaveis({
               placeholder={lideres.length ? "Escolher líder" : "Nenhum Operador Logístico Líder ativo hoje"}
               onAbrir={() => lideres.length > 0 && setPainel("lider")}
               invalido={!!erros.liderCpf}
+              desabilitado={lideres.length === 0}
             />
           </Campo>
         </div>

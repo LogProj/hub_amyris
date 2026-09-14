@@ -69,6 +69,8 @@ model FtAmyrisChecklistCarregamento {
   operadores        FtAmyrisChecklistCarregamentoOperador[]
   epis              FtAmyrisChecklistCarregamentoEpi[]
 
+  @@index([enviadoEm(sort: Desc)])
+  @@index([inicioEm(sort: Desc)])
   @@map("ft_amyris_checklist_carregamento")
 }
 

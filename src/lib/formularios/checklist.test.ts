@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/prisma", () => ({ prisma: {} }))
 
-import { intervaloDoMes, montarRegistro } from "./checklist"
+import { intervaloDoMes, listarHistorico, montarRegistro } from "./checklist"
 import { EPIS, type ChecklistPayload, type PessoaSra } from "./regras"
 
 const PESSOAS: PessoaSra[] = [
@@ -55,5 +55,14 @@ describe("intervaloDoMes", () => {
     expect(intervaloDoMes("")).toBeNull()
     expect(intervaloDoMes("2026-13")).toBeNull()
     expect(intervaloDoMes("setembro")).toBeNull()
+  })
+})
+
+describe("listarHistorico", () => {
+  it("retorna página vazia (em vez do histórico inteiro) quando o mês é inválido", async () => {
+    // `prisma` é mockado como {} acima: se o código tentasse consultar o banco aqui,
+    // a chamada a `prisma.ftAmyrisChecklistCarregamento.count` estouraria (não é função).
+    const r = await listarHistorico({ mes: "setembro" })
+    expect(r).toEqual({ itens: [], total: 0, pagina: 1, paginas: 1 })
   })
 })

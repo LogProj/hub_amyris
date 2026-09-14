@@ -34,13 +34,13 @@ export type ChecklistPayload = {
   ocorrencia: string
 }
 
-export type CampoChecklist = Exclude<keyof ChecklistPayload, never>
+export type CampoChecklist = keyof ChecklistPayload
 export type ErroValidacao = { campo: CampoChecklist; mensagem: string }
 
 export function normalizarFuncao(f: string | null | undefined): string {
   return (f ?? "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase()
     .replace(/\s+/g, " ")

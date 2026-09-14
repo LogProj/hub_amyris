@@ -25,7 +25,8 @@ export async function POST(request: Request) {
   let pessoas: PessoaSra[]
   try {
     pessoas = await getPessoasSra()
-  } catch {
+  } catch (erro) {
+    console.error("checklist POST:", erro)
     return NextResponse.json(
       { error: "Não foi possível consultar a escala agora. Tente de novo em instantes." },
       { status: 503 },
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
       nome: authorization.nome,
     })
     return NextResponse.json({ id }, { status: 201 })
-  } catch {
+  } catch (erro) {
+    console.error("checklist POST:", erro)
     return NextResponse.json(
       { error: "Não foi possível salvar o checklist. Seus dados continuam no aparelho; tente enviar de novo." },
       { status: 500 },

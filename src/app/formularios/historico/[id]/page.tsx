@@ -30,7 +30,8 @@ export default async function DetalheChecklistPage({ params }: { params: { id: s
   let item
   try {
     item = await obterChecklist(id)
-  } catch {
+  } catch (erro) {
+    console.error("historico detalhe:", erro)
     return (
       <div className="pt-6">
         <p className="rounded-xl bg-[rgba(217,45,45,.08)] p-3 text-sm font-medium text-[#C42B2B]">

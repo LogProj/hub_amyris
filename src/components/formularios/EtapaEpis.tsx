@@ -56,6 +56,7 @@ export function EtapaEpis({
                   <button
                     key={o.valor}
                     type="button"
+                    aria-pressed={ativo}
                     onClick={() => onMarcar(e.codigo, ativo ? null : o.valor)}
                     className="h-[34px] min-w-[44px] rounded-[10px] px-2 text-[11px] font-bold transition"
                     style={estilo(ativo, o.valor)}

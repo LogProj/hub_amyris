@@ -14,7 +14,8 @@ export default async function CarregamentoPage() {
   let erroSra = false
   try {
     pessoas = await getPessoasSra()
-  } catch {
+  } catch (erro) {
+    console.error("checklist wizard SRA:", erro)
     erroSra = true
   }
   return <ChecklistWizard pessoas={pessoas} usuarioChave={usuarioChave} erroSra={erroSra} />

@@ -10,18 +10,21 @@ export function CampoSeletor({
   icone: Icone,
   onAbrir,
   invalido = false,
+  desabilitado = false,
 }: {
   valor: string | null
   placeholder: string
   icone?: LucideIcon
   onAbrir: () => void
   invalido?: boolean
+  desabilitado?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onAbrir}
-      className="flex h-[46px] w-full items-center gap-2.5 rounded-[14px] border bg-white px-3 text-left text-[13px] transition"
+      disabled={desabilitado}
+      className="flex h-[46px] w-full items-center gap-2.5 rounded-[14px] border bg-white px-3 text-left text-[13px] transition disabled:cursor-not-allowed disabled:opacity-60"
       style={{ borderColor: invalido ? "rgba(196,43,43,.5)" : "#E7DEED" }}
     >
       {Icone && <Icone className="h-[17px] w-[17px] shrink-0 text-[#7C3AED]" />}

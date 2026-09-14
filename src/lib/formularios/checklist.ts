@@ -149,6 +149,7 @@ export async function listarHistorico(
 ): Promise<PaginaHistorico> {
   const porPagina = opcoes.porPagina ?? POR_PAGINA
   const intervalo = opcoes.mes ? intervaloDoMes(opcoes.mes) : null
+  if (opcoes.mes && !intervalo) return { itens: [], total: 0, pagina: 1, paginas: 1 }
   const where = intervalo ? { inicioEm: { gte: intervalo.inicio, lt: intervalo.fim } } : {}
 
   const total = await prisma.ftAmyrisChecklistCarregamento.count({ where })

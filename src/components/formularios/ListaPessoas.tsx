@@ -11,9 +11,9 @@ import { GRAD } from "./ui"
  * - "multipla": badge sempre visível, preenchido quando selecionado, apagado quando não.
  * - "unica": badge só aparece na pessoa selecionada.
  *
- * O estado de busca é próprio (reseta quando `aberto` volta a ser true) porque este
- * componente permanece montado mesmo com o Sheet fechado (é filho sempre presente na
- * árvore do componente que o usa).
+ * O `Sheet` desmonta este componente quando fechado (retorna null), então o estado de
+ * busca já nasce zerado a cada abertura; o reset em `aberto` é só uma garantia extra
+ * caso o React chegue a reaproveitar a instância entre uma abertura e outra.
  */
 export function ListaPessoas({
   aberto,
