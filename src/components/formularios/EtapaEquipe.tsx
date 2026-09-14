@@ -1,9 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { CalendarClock, Plus, Users, X } from "lucide-react"
+import { formatarDataHora } from "@/lib/formularios/calendario"
 import { formatarFuncao, iniciais, type PessoaSra } from "@/lib/formularios/regras"
 import type { Erros } from "./ChecklistWizard"
-import { Campo, Cartao, MensagemErro, Pilula, classeInput } from "./ui"
+import { CampoSeletor } from "./CampoSeletor"
+import { DataHoraSheet } from "./DataHoraSheet"
+import { Campo, Cartao, MensagemErro, Pilula } from "./ui"
 
 export function EtapaEquipe({
   operadores,
@@ -22,6 +26,8 @@ export function EtapaEquipe({
   onAbrirBusca: () => void
   onMudar: (campo: "inicioEm" | "fimEm", valor: string) => void
 }) {
+  const [painel, setPainel] = useState<"inicio" | "fim" | null>(null)
+
   return (
     <div className="space-y-4">
       <Cartao icone={Users} titulo="Operadores" subtitulo="Da escala da SRA" extra={<Pilula>{operadores.length}</Pilula>}>
@@ -59,13 +65,40 @@ export function EtapaEquipe({
       <Cartao icone={CalendarClock} titulo="Período da atividade" subtitulo="Data e hora de início e fim">
         <div className="grid gap-3">
           <Campo rotulo="Data/hora início" erro={erros.inicioEm}>
-            <input type="datetime-local" value={inicioEm} onChange={(e) => onMudar("inicioEm", e.target.value)} className={classeInput} />
+            <CampoSeletor
+              valor={formatarDataHora(inicioEm) || null}
+              placeholder="Escolher data e hora"
+              icone={CalendarClock}
+              onAbrir={() => setPainel("inicio")}
+              invalido={!!erros.inicioEm}
+            />
           </Campo>
           <Campo rotulo="Data/hora fim" erro={erros.fimEm}>
-            <input type="datetime-local" value={fimEm} onChange={(e) => onMudar("fimEm", e.target.value)} className={classeInput} />
+            <CampoSeletor
+              valor={formatarDataHora(fimEm) || null}
+              placeholder="Escolher data e hora"
+              icone={CalendarClock}
+              onAbrir={() => setPainel("fim")}
+              invalido={!!erros.fimEm}
+            />
           </Campo>
         </div>
       </Cartao>
+
+      <DataHoraSheet
+        aberto={painel === "inicio"}
+        titulo="Início do carregamento"
+        valor={inicioEm}
+        onConfirmar={(v) => onMudar("inicioEm", v)}
+        onFechar={() => setPainel(null)}
+      />
+      <DataHoraSheet
+        aberto={painel === "fim"}
+        titulo="Fim do carregamento"
+        valor={fimEm}
+        onConfirmar={(v) => onMudar("fimEm", v)}
+        onFechar={() => setPainel(null)}
+      />
     </div>
   )
 }

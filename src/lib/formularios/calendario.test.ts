@@ -1,0 +1,66 @@
+import { describe, expect, it } from "vitest"
+import { HORAS, formatarDataHora, gradeDoMes, juntar, rotuloMesAno, separar } from "./calendario"
+
+describe("separar / juntar", () => {
+  it("separa data e hora", () => {
+    expect(separar("2026-09-11T07:30")).toEqual({ data: "2026-09-11", hora: "07:30" })
+  })
+  it("devolve vazio para valor inválido", () => {
+    expect(separar("")).toEqual({ data: "", hora: "" })
+    expect(separar("11/09/2026")).toEqual({ data: "", hora: "" })
+  })
+  it("junta data e hora", () => {
+    expect(juntar("2026-09-11", "07:30")).toBe("2026-09-11T07:30")
+  })
+  it("não junta se faltar parte", () => {
+    expect(juntar("2026-09-11", "")).toBe("")
+    expect(juntar("", "07:30")).toBe("")
+  })
+})
+
+describe("formatarDataHora", () => {
+  it("formata para leitura", () => {
+    expect(formatarDataHora("2026-09-11T07:30")).toBe("11/09/2026 · 07:30")
+  })
+  it("devolve vazio para valor inválido", () => {
+    expect(formatarDataHora("")).toBe("")
+  })
+})
+
+describe("rotuloMesAno", () => {
+  it("nomeia o mês em português", () => {
+    expect(rotuloMesAno(2026, 9)).toBe("Setembro de 2026")
+    expect(rotuloMesAno(2026, 1)).toBe("Janeiro de 2026")
+  })
+})
+
+describe("gradeDoMes", () => {
+  const grade = gradeDoMes(2026, 9) // setembro/2026 começa numa terça-feira
+
+  it("tem 42 posições", () => {
+    expect(grade).toHaveLength(42)
+  })
+  it("deixa vazias as posições antes do dia 1 (semana começa no domingo)", () => {
+    expect(grade[0]).toBeNull()
+    expect(grade[1]).toBeNull()
+    expect(grade[2]).toBe("2026-09-01")
+  })
+  it("cobre todos os dias do mês e nada além", () => {
+    const dias = grade.filter((d): d is string => d !== null)
+    expect(dias).toHaveLength(30)
+    expect(dias[29]).toBe("2026-09-30")
+  })
+  it("lida com fevereiro bissexto", () => {
+    const fev = gradeDoMes(2028, 2).filter((d): d is string => d !== null)
+    expect(fev).toHaveLength(29)
+  })
+})
+
+describe("HORAS", () => {
+  it("vai de 00:00 a 23:30 de 30 em 30 minutos", () => {
+    expect(HORAS).toHaveLength(48)
+    expect(HORAS[0]).toBe("00:00")
+    expect(HORAS[1]).toBe("00:30")
+    expect(HORAS[47]).toBe("23:30")
+  })
+})
