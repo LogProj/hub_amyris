@@ -6,17 +6,21 @@ import { formatarFuncao, iniciais, type PessoaSra } from "@/lib/formularios/regr
 import { Sheet } from "./Sheet"
 import { GRAD } from "./ui"
 
-export function OperadoresSheet({
+export function PessoaSheet({
   aberto,
+  titulo,
+  subtitulo,
   pessoas,
-  selecionados,
-  onAlternar,
+  selecionado,
+  onSelecionar,
   onFechar,
 }: {
   aberto: boolean
+  titulo: string
+  subtitulo?: string
   pessoas: PessoaSra[]
-  selecionados: string[]
-  onAlternar: (cpf: string) => void
+  selecionado: string
+  onSelecionar: (cpf: string) => void
   onFechar: () => void
 }) {
   const [busca, setBusca] = useState("")
@@ -30,26 +34,31 @@ export function OperadoresSheet({
   }, [busca, pessoas])
 
   return (
-    <Sheet aberto={aberto} titulo="Operadores da SRA" subtitulo="Todos os ativos do CR · toque para adicionar" onFechar={onFechar}>
-      <div className="relative mb-3 shrink-0">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[17px] w-[17px] -translate-y-1/2 text-[#6D5E78]" />
-        <input
-          autoFocus
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por nome…"
-          className="h-12 w-full rounded-2xl border border-[#E7DEED] bg-[#FBF8FF] pl-10 pr-3 text-[13px] outline-none focus:border-[rgba(75,0,133,.5)] focus:shadow-[0_0_0_3px_rgba(75,0,133,.16)]"
-        />
-      </div>
+    <Sheet aberto={aberto} titulo={titulo} subtitulo={subtitulo} onFechar={onFechar}>
+      {pessoas.length > 6 && (
+        <div className="relative mb-3 shrink-0">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[17px] w-[17px] -translate-y-1/2 text-[#6D5E78]" />
+          <input
+            autoFocus
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome…"
+            className="h-12 w-full rounded-2xl border border-[#E7DEED] bg-[#FBF8FF] pl-10 pr-3 text-[13px] outline-none focus:border-[rgba(75,0,133,.5)] focus:shadow-[0_0_0_3px_rgba(75,0,133,.16)]"
+          />
+        </div>
+      )}
       <div className="-mx-1 flex-1 space-y-[7px] overflow-y-auto px-1 pb-1">
         {resultados.length === 0 && <p className="py-6 text-center text-sm text-[#8F82A0]">Ninguém encontrado.</p>}
         {resultados.map((p) => {
-          const on = selecionados.includes(p.cpf)
+          const on = selecionado === p.cpf
           return (
             <button
               key={p.cpf}
               type="button"
-              onClick={() => onAlternar(p.cpf)}
+              onClick={() => {
+                onSelecionar(p.cpf)
+                onFechar()
+              }}
               className="flex w-full items-center gap-[11px] rounded-2xl border p-2.5 text-left transition"
               style={{ background: on ? "#F7F3FD" : "#fff", borderColor: on ? "rgba(124,58,237,.35)" : "#E7DEED" }}
             >
@@ -60,12 +69,11 @@ export function OperadoresSheet({
                 <span className="truncate text-[13px] font-semibold text-[#201429]">{p.nome}</span>
                 <span className="truncate text-[10px] text-[#6D5E78]">{formatarFuncao(p.funcao)}</span>
               </span>
-              <span
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-[9px]"
-                style={{ background: on ? GRAD : "#F1EBF8", color: on ? "#fff" : "#CFC4DA" }}
-              >
-                <Check className="h-[15px] w-[15px]" />
-              </span>
+              {on && (
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] text-white" style={{ background: GRAD }}>
+                  <Check className="h-[15px] w-[15px]" />
+                </span>
+              )}
             </button>
           )
         })}

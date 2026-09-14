@@ -1,8 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { MessageSquareWarning, UserCheck } from "lucide-react"
 import { EPIS, formatarFuncao, podeSerLider, podeSerSupervisor, resumoEpis, type ChecklistPayload, type PessoaSra } from "@/lib/formularios/regras"
 import type { Erros } from "./ChecklistWizard"
+import { CampoSeletor } from "./CampoSeletor"
+import { PessoaSheet } from "./PessoaSheet"
 import { Campo, Cartao, MensagemErro, Pilula, classeInput } from "./ui"
 
 export function EtapaResponsaveis({
@@ -16,34 +19,36 @@ export function EtapaResponsaveis({
   erros: Erros
   onMudar: (campo: "supervisorCpf" | "liderCpf" | "ocorrencia", valor: string) => void
 }) {
+  const [painel, setPainel] = useState<"supervisor" | "lider" | null>(null)
   const supervisores = pessoas.filter(podeSerSupervisor)
   const lideres = pessoas.filter(podeSerLider)
   const temNao = EPIS.some((e) => estado.epis[e.codigo] === "nao")
   const lacresPreenchidos = estado.lacres.filter((l) => l.trim()).length
+
+  const nomeDe = (cpf: string) => {
+    const p = pessoas.find((x) => x.cpf === cpf)
+    return p ? `${p.nome} · ${formatarFuncao(p.funcao)}` : null
+  }
 
   return (
     <div className="space-y-3.5">
       <Cartao icone={UserCheck} titulo="Responsáveis" subtitulo="Cargos validados na SRA">
         <div className="space-y-3">
           <Campo rotulo="Supervisor responsável" erro={erros.supervisorCpf}>
-            <select value={estado.supervisorCpf} onChange={(e) => onMudar("supervisorCpf", e.target.value)} className={classeInput}>
-              <option value="">{supervisores.length ? "Selecione…" : "Nenhum Supervisor de Logística ativo hoje"}</option>
-              {supervisores.map((p) => (
-                <option key={p.cpf} value={p.cpf}>
-                  {p.nome} · {formatarFuncao(p.funcao)}
-                </option>
-              ))}
-            </select>
+            <CampoSeletor
+              valor={nomeDe(estado.supervisorCpf)}
+              placeholder={supervisores.length ? "Escolher supervisor" : "Nenhum Supervisor de Logística ativo hoje"}
+              onAbrir={() => supervisores.length > 0 && setPainel("supervisor")}
+              invalido={!!erros.supervisorCpf}
+            />
           </Campo>
           <Campo rotulo="Líder responsável" erro={erros.liderCpf}>
-            <select value={estado.liderCpf} onChange={(e) => onMudar("liderCpf", e.target.value)} className={classeInput}>
-              <option value="">{lideres.length ? "Selecione…" : "Nenhum Operador Logístico Líder ativo hoje"}</option>
-              {lideres.map((p) => (
-                <option key={p.cpf} value={p.cpf}>
-                  {p.nome} · {formatarFuncao(p.funcao)}
-                </option>
-              ))}
-            </select>
+            <CampoSeletor
+              valor={nomeDe(estado.liderCpf)}
+              placeholder={lideres.length ? "Escolher líder" : "Nenhum Operador Logístico Líder ativo hoje"}
+              onAbrir={() => lideres.length > 0 && setPainel("lider")}
+              invalido={!!erros.liderCpf}
+            />
           </Campo>
         </div>
       </Cartao>
@@ -74,6 +79,25 @@ export function EtapaResponsaveis({
           <Pilula className="border border-[#E7DEED] bg-white">{lacresPreenchidos} lacres</Pilula>
         </div>
       </div>
+
+      <PessoaSheet
+        aberto={painel === "supervisor"}
+        titulo="Supervisor responsável"
+        subtitulo="Somente Supervisor de Logística"
+        pessoas={supervisores}
+        selecionado={estado.supervisorCpf}
+        onSelecionar={(cpf) => onMudar("supervisorCpf", cpf)}
+        onFechar={() => setPainel(null)}
+      />
+      <PessoaSheet
+        aberto={painel === "lider"}
+        titulo="Líder responsável"
+        subtitulo="Somente Operador Logístico Líder"
+        pessoas={lideres}
+        selecionado={estado.liderCpf}
+        onSelecionar={(cpf) => onMudar("liderCpf", cpf)}
+        onFechar={() => setPainel(null)}
+      />
     </div>
   )
 }
