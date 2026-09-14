@@ -1,7 +1,7 @@
 import { ChecklistWizard } from "@/components/formularios/ChecklistWizard"
 import { getSessionReadOnly } from "@/lib/auth-session"
 import type { PessoaSra } from "@/lib/formularios/regras"
-import { getPessoasSra } from "@/lib/formularios/sra"
+import { getPessoasSra, paraCliente } from "@/lib/formularios/sra"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +13,7 @@ export default async function CarregamentoPage() {
   let pessoas: PessoaSra[] = []
   let erroSra = false
   try {
-    pessoas = await getPessoasSra()
+    pessoas = paraCliente(await getPessoasSra())
   } catch (erro) {
     console.error("checklist wizard SRA:", erro)
     erroSra = true

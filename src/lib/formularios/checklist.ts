@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { EPIS, paraDataBrasilia, type ChecklistPayload, type EpiStatus, type PessoaSra } from "./regras"
+import { EPIS, paraDataBrasilia, type ChecklistPayload, type EpiStatus, type PessoaSraServidor } from "./regras"
 
 export type Autor = { usuarioId: number; email: string; nome: string | null }
 
@@ -26,11 +26,13 @@ export type RegistroChecklist = {
 
 // Pré-condição: `validarChecklist(p, pessoas)` retornou []. Grava a FOTO de nome e
 // função do dia (a SRA muda diariamente; o checklist não pode depender dela depois).
-export function montarRegistro(p: ChecklistPayload, pessoas: PessoaSra[], autor: Autor): RegistroChecklist {
-  const porCpf = new Map(pessoas.map((x) => [x.cpf, x]))
-  const pessoa = (cpf: string) => porCpf.get(cpf) as PessoaSra
-  const sup = pessoa(p.supervisorCpf)
-  const lider = pessoa(p.liderCpf)
+// Resolve cada id opaco de volta à pessoa (com CPF) recalculando a SRA do momento —
+// o CPF nunca sai do servidor, nem chega a existir do lado do cliente.
+export function montarRegistro(p: ChecklistPayload, pessoas: PessoaSraServidor[], autor: Autor): RegistroChecklist {
+  const porId = new Map(pessoas.map((x) => [x.id, x]))
+  const pessoa = (id: string) => porId.get(id) as PessoaSraServidor
+  const sup = pessoa(p.supervisorId)
+  const lider = pessoa(p.liderId)
   return {
     criadoPorId: autor.usuarioId > 0 ? autor.usuarioId : null,
     criadoPorEmail: autor.email,
@@ -48,8 +50,8 @@ export function montarRegistro(p: ChecklistPayload, pessoas: PessoaSra[], autor:
     liderFuncao: lider.funcao ?? "",
     ocorrencia: p.ocorrencia || null,
     operadores: {
-      create: p.operadores.map((cpf) => {
-        const o = pessoa(cpf)
+      create: p.operadores.map((id) => {
+        const o = pessoa(id)
         return { cpf: o.cpf, nome: o.nome, funcao: o.funcao }
       }),
     },
@@ -58,7 +60,7 @@ export function montarRegistro(p: ChecklistPayload, pessoas: PessoaSra[], autor:
 }
 
 // Create aninhado = uma única transação no Prisma (cabeçalho + operadores + EPIs).
-export async function salvarChecklist(p: ChecklistPayload, pessoas: PessoaSra[], autor: Autor): Promise<number> {
+export async function salvarChecklist(p: ChecklistPayload, pessoas: PessoaSraServidor[], autor: Autor): Promise<number> {
   const r = await prisma.ftAmyrisChecklistCarregamento.create({
     data: montarRegistro(p, pessoas, autor),
     select: { id: true },

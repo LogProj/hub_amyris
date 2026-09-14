@@ -15,24 +15,24 @@ import {
 } from "./regras"
 
 const PESSOAS: PessoaSra[] = [
-  { cpf: "111", nome: "Ana Souza", funcao: "OPERADOR LOGISTICO II" },
-  { cpf: "222", nome: "Bruno Lima", funcao: "SUPERVISOR DE LOGISTICA" },
-  { cpf: "333", nome: "Carla Dias", funcao: "OPERADOR LOGISTICO LIDER" },
+  { id: "id-ana", nome: "Ana Souza", funcao: "OPERADOR LOGISTICO II" },
+  { id: "id-bruno", nome: "Bruno Lima", funcao: "SUPERVISOR DE LOGISTICA" },
+  { id: "id-carla", nome: "Carla Dias", funcao: "OPERADOR LOGISTICO LIDER" },
 ]
 
 const todosSim = Object.fromEntries(EPIS.map((e) => [e.codigo, "sim"])) as ChecklistPayload["epis"]
 
 function valido(parcial: Partial<ChecklistPayload> = {}): ChecklistPayload {
   return {
-    operadores: ["111"],
+    operadores: ["id-ana"],
     inicioEm: "2026-09-11T07:30",
     fimEm: "2026-09-11T11:45",
     veiculoNumero: "1042",
     veiculoCapacidade: "28 t",
     lacres: ["A1"],
     epis: todosSim,
-    supervisorCpf: "222",
-    liderCpf: "333",
+    supervisorId: "id-bruno",
+    liderId: "id-carla",
     ocorrencia: "",
     ...parcial,
   }
@@ -48,7 +48,7 @@ describe("validarChecklist", () => {
     expect(campos(valido({ operadores: [] }))).toEqual(["operadores"])
   })
   it("recusa operador que não está ativo na SRA", () => {
-    expect(campos(valido({ operadores: ["999"] }))).toEqual(["operadores"])
+    expect(campos(valido({ operadores: ["id-inexistente"] }))).toEqual(["operadores"])
   })
   it("exige início e fim", () => {
     expect(campos(valido({ inicioEm: "", fimEm: "" }))).toEqual(["inicioEm", "fimEm"])
@@ -69,10 +69,10 @@ describe("validarChecklist", () => {
     expect(campos(valido({ epis: { ...todosSim, cinto: null } }))).toEqual(["epis"])
   })
   it("recusa supervisor sem o cargo de Supervisor de Logística", () => {
-    expect(campos(valido({ supervisorCpf: "111" }))).toEqual(["supervisorCpf"])
+    expect(campos(valido({ supervisorId: "id-ana" }))).toEqual(["supervisorId"])
   })
   it("recusa líder sem o cargo de Operador Logístico Líder", () => {
-    expect(campos(valido({ liderCpf: "222" }))).toEqual(["liderCpf"])
+    expect(campos(valido({ liderId: "id-bruno" }))).toEqual(["liderId"])
   })
   it("exige ocorrência quando algum EPI é Não", () => {
     expect(campos(valido({ epis: { ...todosSim, luva: "nao" } }))).toEqual(["ocorrencia"])
@@ -106,7 +106,7 @@ describe("normalizarPayload", () => {
 
 describe("formatações e utilitários", () => {
   it("compara cargo sem acento e sem caixa", () => {
-    expect(podeSerSupervisor({ cpf: "1", nome: "X", funcao: "Supervisor de Logística" })).toBe(true)
+    expect(podeSerSupervisor({ id: "id-x", nome: "X", funcao: "Supervisor de Logística" })).toBe(true)
   })
   it("gera iniciais", () => {
     expect(iniciais("Rafael Alves Souza")).toBe("RS")

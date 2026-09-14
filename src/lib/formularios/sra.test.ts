@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest"
+import { idDaPessoa } from "./identificadores"
 import { mapearPessoas } from "./sra"
 
 describe("mapearPessoas", () => {
-  it("apara campos, descarta linha sem cpf e ordena por nome", () => {
+  it("apara campos, descarta linha sem cpf, ordena por nome e calcula o id opaco", () => {
     expect(
       mapearPessoas([
         { cpf: " 2 ", nome: " Bruno ", descricao_funcao: "SUPERVISOR DE LOGISTICA " },
@@ -11,9 +12,9 @@ describe("mapearPessoas", () => {
         { cpf: "3", nome: null, descricao_funcao: "  " },
       ]),
     ).toEqual([
-      { cpf: "1", nome: "Ana", funcao: null },
-      { cpf: "2", nome: "Bruno", funcao: "SUPERVISOR DE LOGISTICA" },
-      { cpf: "3", nome: "—", funcao: null },
+      { id: idDaPessoa("1"), cpf: "1", nome: "Ana", funcao: null },
+      { id: idDaPessoa("2"), cpf: "2", nome: "Bruno", funcao: "SUPERVISOR DE LOGISTICA" },
+      { id: idDaPessoa("3"), cpf: "3", nome: "—", funcao: null },
     ])
   })
 })

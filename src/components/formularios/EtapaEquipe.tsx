@@ -22,7 +22,7 @@ export function EtapaEquipe({
   inicioEm: string
   fimEm: string
   erros: Erros
-  onRemover: (cpf: string) => void
+  onRemover: (id: string) => void
   onAbrirBusca: () => void
   onMudar: (campo: "inicioEm" | "fimEm", valor: string) => void
 }) {
@@ -33,7 +33,7 @@ export function EtapaEquipe({
       <Cartao icone={Users} titulo="Operadores" subtitulo="Da escala da SRA" extra={<Pilula>{operadores.length}</Pilula>}>
         <div className="space-y-2">
           {operadores.map((o) => (
-            <div key={o.cpf} className="flex items-center gap-2.5 rounded-2xl border border-[#E7DEED] bg-white py-2.5 pl-3 pr-2.5">
+            <div key={o.id} className="flex items-center gap-2.5 rounded-2xl border border-[#E7DEED] bg-white py-2.5 pl-3 pr-2.5">
               <span className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] bg-[#F4F0FB] text-[11px] font-bold text-[#4B0085]">
                 {iniciais(o.nome)}
               </span>
@@ -43,7 +43,7 @@ export function EtapaEquipe({
               </span>
               <button
                 type="button"
-                onClick={() => onRemover(o.cpf)}
+                onClick={() => onRemover(o.id)}
                 aria-label={`Remover ${o.nome}`}
                 className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] text-[#A79BB0] hover:bg-[rgba(217,45,45,.08)] hover:text-[#C42B2B]"
               >

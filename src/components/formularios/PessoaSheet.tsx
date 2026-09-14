@@ -18,7 +18,7 @@ export function PessoaSheet({
   subtitulo?: string
   pessoas: PessoaSra[]
   selecionado: string
-  onSelecionar: (cpf: string) => void
+  onSelecionar: (id: string) => void
   onFechar: () => void
 }) {
   return (
@@ -28,8 +28,8 @@ export function PessoaSheet({
         pessoas={pessoas}
         modo="unica"
         selecionado={selecionado}
-        onSelecionar={(cpf) => {
-          onSelecionar(cpf)
+        onSelecionar={(id) => {
+          onSelecionar(id)
           onFechar()
         }}
         ocultarBuscaSeCurta

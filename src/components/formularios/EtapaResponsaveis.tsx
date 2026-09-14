@@ -17,7 +17,7 @@ export function EtapaResponsaveis({
   pessoas: PessoaSra[]
   estado: ChecklistPayload
   erros: Erros
-  onMudar: (campo: "supervisorCpf" | "liderCpf" | "ocorrencia", valor: string) => void
+  onMudar: (campo: "supervisorId" | "liderId" | "ocorrencia", valor: string) => void
 }) {
   const [painel, setPainel] = useState<"supervisor" | "lider" | null>(null)
   const supervisores = pessoas.filter(podeSerSupervisor)
@@ -25,8 +25,8 @@ export function EtapaResponsaveis({
   const temNao = EPIS.some((e) => estado.epis[e.codigo] === "nao")
   const lacresPreenchidos = estado.lacres.filter((l) => l.trim()).length
 
-  const nomeDe = (cpf: string) => {
-    const p = pessoas.find((x) => x.cpf === cpf)
+  const nomeDe = (id: string) => {
+    const p = pessoas.find((x) => x.id === id)
     return p ? `${p.nome} · ${formatarFuncao(p.funcao)}` : null
   }
 
@@ -34,21 +34,21 @@ export function EtapaResponsaveis({
     <div className="space-y-3.5">
       <Cartao icone={UserCheck} titulo="Responsáveis" subtitulo="Cargos validados na SRA">
         <div className="space-y-3">
-          <Campo rotulo="Supervisor responsável" erro={erros.supervisorCpf}>
+          <Campo rotulo="Supervisor responsável" erro={erros.supervisorId}>
             <CampoSeletor
-              valor={nomeDe(estado.supervisorCpf)}
+              valor={nomeDe(estado.supervisorId)}
               placeholder={supervisores.length ? "Escolher supervisor" : "Nenhum Supervisor de Logística ativo hoje"}
               onAbrir={() => supervisores.length > 0 && setPainel("supervisor")}
-              invalido={!!erros.supervisorCpf}
+              invalido={!!erros.supervisorId}
               desabilitado={supervisores.length === 0}
             />
           </Campo>
-          <Campo rotulo="Líder responsável" erro={erros.liderCpf}>
+          <Campo rotulo="Líder responsável" erro={erros.liderId}>
             <CampoSeletor
-              valor={nomeDe(estado.liderCpf)}
+              valor={nomeDe(estado.liderId)}
               placeholder={lideres.length ? "Escolher líder" : "Nenhum Operador Logístico Líder ativo hoje"}
               onAbrir={() => lideres.length > 0 && setPainel("lider")}
-              invalido={!!erros.liderCpf}
+              invalido={!!erros.liderId}
               desabilitado={lideres.length === 0}
             />
           </Campo>
@@ -87,8 +87,8 @@ export function EtapaResponsaveis({
         titulo="Supervisor responsável"
         subtitulo="Somente Supervisor de Logística"
         pessoas={supervisores}
-        selecionado={estado.supervisorCpf}
-        onSelecionar={(cpf) => onMudar("supervisorCpf", cpf)}
+        selecionado={estado.supervisorId}
+        onSelecionar={(id) => onMudar("supervisorId", id)}
         onFechar={() => setPainel(null)}
       />
       <PessoaSheet
@@ -96,8 +96,8 @@ export function EtapaResponsaveis({
         titulo="Líder responsável"
         subtitulo="Somente Operador Logístico Líder"
         pessoas={lideres}
-        selecionado={estado.liderCpf}
-        onSelecionar={(cpf) => onMudar("liderCpf", cpf)}
+        selecionado={estado.liderId}
+        onSelecionar={(id) => onMudar("liderId", id)}
         onFechar={() => setPainel(null)}
       />
     </div>

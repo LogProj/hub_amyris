@@ -36,8 +36,8 @@ const VAZIO: EstadoChecklist = {
   veiculoCapacidade: "",
   lacres: [],
   epis: {},
-  supervisorCpf: "",
-  liderCpf: "",
+  supervisorId: "",
+  liderId: "",
   ocorrencia: "",
 }
 
@@ -77,16 +77,16 @@ export function ChecklistWizard({
   const [enviando, setEnviando] = useState(false)
   const [enviadoId, setEnviadoId] = useState<number | null>(null)
 
-  const porCpf = useMemo(() => new Map(pessoas.map((p) => [p.cpf, p])), [pessoas])
+  const porId = useMemo(() => new Map(pessoas.map((p) => [p.id, p])), [pessoas])
 
   // Oferece retomar o rascunho salvo (descarta pessoas que saíram da escala).
   useEffect(() => {
     const salvo = ler()
     if (salvo && temConteudo(salvo)) {
-      setOferta({ ...VAZIO, ...salvo, operadores: salvo.operadores.filter((c) => porCpf.has(c)) })
+      setOferta({ ...VAZIO, ...salvo, operadores: salvo.operadores.filter((id) => porId.has(id)) })
     }
     setPronto(true)
-  }, [ler, porCpf])
+  }, [ler, porId])
 
   // Auto-save a cada mudança (não sobrescreve o rascunho enquanto a oferta está aberta).
   useEffect(() => {
@@ -150,7 +150,7 @@ export function ChecklistWizard({
   if (enviadoId !== null) return <ConfirmacaoEnvio id={enviadoId} onNovo={novo} />
 
   const etapa = estado.etapa
-  const operadores = estado.operadores.map((c) => porCpf.get(c)).filter((p): p is PessoaSra => !!p)
+  const operadores = estado.operadores.map((id) => porId.get(id)).filter((p): p is PessoaSra => !!p)
 
   return (
     <div className="pt-1">
@@ -227,7 +227,7 @@ export function ChecklistWizard({
           inicioEm={estado.inicioEm}
           fimEm={estado.fimEm}
           erros={erros}
-          onRemover={(cpf) => mudar("operadores", estado.operadores.filter((c) => c !== cpf))}
+          onRemover={(id) => mudar("operadores", estado.operadores.filter((c) => c !== id))}
           onAbrirBusca={() => setBuscaAberta(true)}
           onMudar={(campo, valor) => mudar(campo, valor)}
         />
@@ -280,10 +280,10 @@ export function ChecklistWizard({
         aberto={buscaAberta}
         pessoas={pessoas}
         selecionados={estado.operadores}
-        onAlternar={(cpf) =>
+        onAlternar={(id) =>
           mudar(
             "operadores",
-            estado.operadores.includes(cpf) ? estado.operadores.filter((c) => c !== cpf) : [...estado.operadores, cpf],
+            estado.operadores.includes(id) ? estado.operadores.filter((c) => c !== id) : [...estado.operadores, id],
           )
         }
         onFechar={() => setBuscaAberta(false)}

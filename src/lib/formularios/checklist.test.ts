@@ -3,24 +3,24 @@ import { describe, expect, it, vi } from "vitest"
 vi.mock("@/lib/prisma", () => ({ prisma: {} }))
 
 import { intervaloDoMes, listarHistorico, montarRegistro } from "./checklist"
-import { EPIS, type ChecklistPayload, type PessoaSra } from "./regras"
+import { EPIS, type ChecklistPayload, type PessoaSraServidor } from "./regras"
 
-const PESSOAS: PessoaSra[] = [
-  { cpf: "111", nome: "Ana Souza", funcao: "OPERADOR LOGISTICO II" },
-  { cpf: "222", nome: "Bruno Lima", funcao: "SUPERVISOR DE LOGISTICA" },
-  { cpf: "333", nome: "Carla Dias", funcao: "OPERADOR LOGISTICO LIDER" },
+const PESSOAS: PessoaSraServidor[] = [
+  { id: "id-ana", cpf: "111", nome: "Ana Souza", funcao: "OPERADOR LOGISTICO II" },
+  { id: "id-bruno", cpf: "222", nome: "Bruno Lima", funcao: "SUPERVISOR DE LOGISTICA" },
+  { id: "id-carla", cpf: "333", nome: "Carla Dias", funcao: "OPERADOR LOGISTICO LIDER" },
 ]
 
 const payload: ChecklistPayload = {
-  operadores: ["111", "333"],
+  operadores: ["id-ana", "id-carla"],
   inicioEm: "2026-09-11T07:30",
   fimEm: "2026-09-11T11:45",
   veiculoNumero: "1042",
   veiculoCapacidade: "28 t",
   lacres: ["A1"],
   epis: Object.fromEntries(EPIS.map((e) => [e.codigo, "sim"])) as ChecklistPayload["epis"],
-  supervisorCpf: "222",
-  liderCpf: "333",
+  supervisorId: "id-bruno",
+  liderId: "id-carla",
   ocorrencia: "",
 }
 

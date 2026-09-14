@@ -29,7 +29,7 @@ export function ListaPessoas({
   modo: "unica" | "multipla"
   selecionados?: string[]
   selecionado?: string
-  onSelecionar: (cpf: string) => void
+  onSelecionar: (id: string) => void
   ocultarBuscaSeCurta?: boolean
 }) {
   const [busca, setBusca] = useState("")
@@ -61,12 +61,12 @@ export function ListaPessoas({
       <div className="-mx-1 flex-1 space-y-[7px] overflow-y-auto px-1 pb-1">
         {resultados.length === 0 && <p className="py-6 text-center text-sm text-[#8F82A0]">Ninguém encontrado.</p>}
         {resultados.map((p) => {
-          const on = modo === "multipla" ? !!selecionados?.includes(p.cpf) : selecionado === p.cpf
+          const on = modo === "multipla" ? !!selecionados?.includes(p.id) : selecionado === p.id
           return (
             <button
-              key={p.cpf}
+              key={p.id}
               type="button"
-              onClick={() => onSelecionar(p.cpf)}
+              onClick={() => onSelecionar(p.id)}
               className="flex w-full items-center gap-[11px] rounded-2xl border p-2.5 text-left transition"
               style={{ background: on ? "#F7F3FD" : "#fff", borderColor: on ? "rgba(124,58,237,.35)" : "#E7DEED" }}
             >

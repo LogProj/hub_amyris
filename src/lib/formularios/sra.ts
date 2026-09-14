@@ -1,5 +1,6 @@
 import { inhausPool } from "@/lib/db-inhaus"
-import type { PessoaSra } from "./regras"
+import { idDaPessoa } from "./identificadores"
+import type { PessoaSra, PessoaSraServidor } from "./regras"
 
 /**
  * Pessoas ATIVAS do CR Amyris (Barra Bonita) no snapshot mais recente da
@@ -8,14 +9,18 @@ import type { PessoaSra } from "./regras"
  */
 export type LinhaSra = { cpf: string | null; nome: string | null; descricao_funcao: string | null }
 
-export function mapearPessoas(rows: LinhaSra[]): PessoaSra[] {
+export function mapearPessoas(rows: LinhaSra[]): PessoaSraServidor[] {
   return rows
     .filter((r) => r.cpf && r.cpf.trim())
-    .map((r) => ({
-      cpf: (r.cpf as string).trim(),
-      nome: (r.nome ?? "").trim() || "—",
-      funcao: r.descricao_funcao?.trim() || null,
-    }))
+    .map((r) => {
+      const cpf = (r.cpf as string).trim()
+      return {
+        id: idDaPessoa(cpf),
+        cpf,
+        nome: (r.nome ?? "").trim() || "—",
+        funcao: r.descricao_funcao?.trim() || null,
+      }
+    })
     .sort((a, b) => {
       // Coloca "—" (sem nome) no final
       if (a.nome === "—" && b.nome !== "—") return 1
@@ -24,7 +29,12 @@ export function mapearPessoas(rows: LinhaSra[]): PessoaSra[] {
     })
 }
 
-export async function getPessoasSra(): Promise<PessoaSra[]> {
+/** Remove o CPF antes de mandar a lista para o Client Component / navegador. */
+export function paraCliente(pessoas: PessoaSraServidor[]): PessoaSra[] {
+  return pessoas.map(({ id, nome, funcao }) => ({ id, nome, funcao }))
+}
+
+export async function getPessoasSra(): Promise<PessoaSraServidor[]> {
   const { rows } = await inhausPool.query<LinhaSra>(
     `select distinct on (cpf) cpf, nome, descricao_funcao
        from public.vw_sra_amyris_diario

@@ -16,6 +16,13 @@ export function BottomNav() {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
     } finally {
+      // Limpa os rascunhos de formulários deste aparelho: eles não devem persistir
+      // além da sessão de quem os preencheu.
+      try {
+        for (const chave of Object.keys(window.localStorage)) {
+          if (chave.startsWith("amyris:rascunho:")) window.localStorage.removeItem(chave)
+        }
+      } catch {}
       router.replace("/login")
     }
   }

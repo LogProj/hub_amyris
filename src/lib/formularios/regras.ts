@@ -19,18 +19,19 @@ export const MAX_LACRES = 4
 export const FUNCAO_SUPERVISOR = "SUPERVISOR DE LOGISTICA"
 export const FUNCAO_LIDER = "OPERADOR LOGISTICO LIDER"
 
-export type PessoaSra = { cpf: string; nome: string; funcao: string | null }
+export type PessoaSra = { id: string; nome: string; funcao: string | null }
+export type PessoaSraServidor = PessoaSra & { cpf: string }
 
 export type ChecklistPayload = {
-  operadores: string[] // cpfs
+  operadores: string[] // ids opacos (ver identificadores.ts)
   inicioEm: string // "YYYY-MM-DDTHH:mm" (input datetime-local, hora de Brasília)
   fimEm: string
   veiculoNumero: string
   veiculoCapacidade: string
   lacres: string[]
   epis: Partial<Record<EpiCodigo, EpiStatus | null>>
-  supervisorCpf: string
-  liderCpf: string
+  supervisorId: string
+  liderId: string
   ocorrencia: string
 }
 
@@ -70,8 +71,8 @@ export function normalizarPayload(bruto: unknown): ChecklistPayload {
     veiculoCapacidade: texto(o.veiculoCapacidade),
     lacres: lista(o.lacres),
     epis,
-    supervisorCpf: texto(o.supervisorCpf),
-    liderCpf: texto(o.liderCpf),
+    supervisorId: texto(o.supervisorId),
+    liderId: texto(o.liderId),
     ocorrencia: texto(o.ocorrencia),
   }
 }
@@ -80,11 +81,11 @@ const DATA_HORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 
 export function validarChecklist(p: ChecklistPayload, pessoas: PessoaSra[]): ErroValidacao[] {
   const erros: ErroValidacao[] = []
-  const porCpf = new Map(pessoas.map((x) => [x.cpf, x]))
+  const porId = new Map(pessoas.map((x) => [x.id, x]))
 
   if (p.operadores.length === 0) {
     erros.push({ campo: "operadores", mensagem: "Adicione pelo menos um operador." })
-  } else if (p.operadores.some((c) => !porCpf.has(c))) {
+  } else if (p.operadores.some((c) => !porId.has(c))) {
     erros.push({
       campo: "operadores",
       mensagem: "Há operador que não está mais ativo na escala. Remova e adicione de novo.",
@@ -106,15 +107,15 @@ export function validarChecklist(p: ChecklistPayload, pessoas: PessoaSra[]): Err
   const semResposta = EPIS.filter((e) => !p.epis[e.codigo]).length
   if (semResposta > 0) erros.push({ campo: "epis", mensagem: `Responda todos os EPIs (faltam ${semResposta}).` })
 
-  const sup = porCpf.get(p.supervisorCpf)
-  if (!p.supervisorCpf) erros.push({ campo: "supervisorCpf", mensagem: "Escolha o supervisor responsável." })
+  const sup = porId.get(p.supervisorId)
+  if (!p.supervisorId) erros.push({ campo: "supervisorId", mensagem: "Escolha o supervisor responsável." })
   else if (!sup || !podeSerSupervisor(sup))
-    erros.push({ campo: "supervisorCpf", mensagem: "A pessoa escolhida não é Supervisor de Logística na escala." })
+    erros.push({ campo: "supervisorId", mensagem: "A pessoa escolhida não é Supervisor de Logística na escala." })
 
-  const lider = porCpf.get(p.liderCpf)
-  if (!p.liderCpf) erros.push({ campo: "liderCpf", mensagem: "Escolha o líder responsável." })
+  const lider = porId.get(p.liderId)
+  if (!p.liderId) erros.push({ campo: "liderId", mensagem: "Escolha o líder responsável." })
   else if (!lider || !podeSerLider(lider))
-    erros.push({ campo: "liderCpf", mensagem: "A pessoa escolhida não é Operador Logístico Líder na escala." })
+    erros.push({ campo: "liderId", mensagem: "A pessoa escolhida não é Operador Logístico Líder na escala." })
 
   if (EPIS.some((e) => p.epis[e.codigo] === "nao") && !p.ocorrencia) {
     erros.push({
@@ -172,8 +173,8 @@ const ETAPA: Record<CampoChecklist, 1 | 2 | 3 | 4> = {
   veiculoNumero: 3,
   veiculoCapacidade: 3,
   lacres: 3,
-  supervisorCpf: 4,
-  liderCpf: 4,
+  supervisorId: 4,
+  liderId: 4,
   ocorrencia: 4,
 }
 export const etapaDoCampo = (campo: CampoChecklist) => ETAPA[campo]

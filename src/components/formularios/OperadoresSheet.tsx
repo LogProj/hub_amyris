@@ -14,7 +14,7 @@ export function OperadoresSheet({
   aberto: boolean
   pessoas: PessoaSra[]
   selecionados: string[]
-  onAlternar: (cpf: string) => void
+  onAlternar: (id: string) => void
   onFechar: () => void
 }) {
   return (

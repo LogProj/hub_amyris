@@ -5,7 +5,7 @@ import { NextResponse } from "next/server"
 
 import { requireSession } from "@/lib/auth-session"
 import { salvarChecklist } from "@/lib/formularios/checklist"
-import { normalizarPayload, validarChecklist, type PessoaSra } from "@/lib/formularios/regras"
+import { normalizarPayload, validarChecklist, type PessoaSraServidor } from "@/lib/formularios/regras"
 import { getPessoasSra } from "@/lib/formularios/sra"
 
 export const dynamic = "force-dynamic"
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
   const payload = normalizarPayload(bruto)
 
-  let pessoas: PessoaSra[]
+  let pessoas: PessoaSraServidor[]
   try {
     pessoas = await getPessoasSra()
   } catch (erro) {
