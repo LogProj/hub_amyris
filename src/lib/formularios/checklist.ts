@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { EPIS, paraDataBrasilia, type ChecklistPayload, type EpiStatus, type PessoaSra } from "./regras"
 
@@ -81,14 +82,15 @@ export type ItemHistorico = {
   ocorrencia: string | null
 }
 
-// Envios de TODOS os usuários (conferência entre turnos), mais recentes primeiro.
-export async function listarHistorico(limite = 50): Promise<ItemHistorico[]> {
-  const linhas = await prisma.ftAmyrisChecklistCarregamento.findMany({
-    orderBy: { enviadoEm: "desc" },
-    take: limite,
-    include: { operadores: { select: { id: true } }, epis: { select: { status: true } } },
-  })
-  return linhas.map((l) => ({
+const INCLUI_HISTORICO = {
+  operadores: { select: { id: true } },
+  epis: { select: { status: true } },
+} satisfies Prisma.FtAmyrisChecklistCarregamentoInclude
+
+type LinhaHistorico = Prisma.FtAmyrisChecklistCarregamentoGetPayload<{ include: typeof INCLUI_HISTORICO }>
+
+function paraItem(l: LinhaHistorico): ItemHistorico {
+  return {
     id: l.id,
     enviadoEm: l.enviadoEm.toISOString(),
     inicioEm: l.inicioEm.toISOString(),
@@ -106,5 +108,107 @@ export async function listarHistorico(limite = 50): Promise<ItemHistorico[]> {
     liderNome: l.liderNome,
     enviadoPor: l.criadoPorNome ?? l.criadoPorEmail,
     ocorrencia: l.ocorrencia,
-  }))
+  }
+}
+
+export const POR_PAGINA = 20
+
+const MES = /^(\d{4})-(\d{2})$/
+
+/** Início (inclusive) e fim (exclusivo) do mês, em hora de Brasília. */
+export function intervaloDoMes(mes: string): { inicio: Date; fim: Date } | null {
+  const m = MES.exec(mes ?? "")
+  if (!m) return null
+  const ano = Number(m[1])
+  const numero = Number(m[2])
+  if (numero < 1 || numero > 12) return null
+  const proximoAno = numero === 12 ? ano + 1 : ano
+  const proximoMes = numero === 12 ? 1 : numero + 1
+  const dois = (n: number) => String(n).padStart(2, "0")
+  return {
+    inicio: new Date(`${ano}-${dois(numero)}-01T00:00:00-03:00`),
+    fim: new Date(`${proximoAno}-${dois(proximoMes)}-01T00:00:00-03:00`),
+  }
+}
+
+/** Meses que têm carregamento registrado, pelo mês de INÍCIO em São Paulo. */
+export async function listarMesesHistorico(): Promise<string[]> {
+  const linhas = await prisma.$queryRaw<{ mes: string }[]>`
+    select distinct to_char(inicio_em at time zone 'America/Sao_Paulo', 'YYYY-MM') as mes
+      from public.ft_amyris_checklist_carregamento
+     order by mes desc`
+  return linhas.map((l) => l.mes)
+}
+
+export type PaginaHistorico = { itens: ItemHistorico[]; total: number; pagina: number; paginas: number }
+
+// Envios de TODOS os usuários (conferência entre turnos), mais recentes primeiro,
+// opcionalmente de um mês de carregamento só, em páginas de POR_PAGINA.
+export async function listarHistorico(
+  opcoes: { mes?: string; pagina?: number; porPagina?: number } = {},
+): Promise<PaginaHistorico> {
+  const porPagina = opcoes.porPagina ?? POR_PAGINA
+  const intervalo = opcoes.mes ? intervaloDoMes(opcoes.mes) : null
+  const where = intervalo ? { inicioEm: { gte: intervalo.inicio, lt: intervalo.fim } } : {}
+
+  const total = await prisma.ftAmyrisChecklistCarregamento.count({ where })
+  const paginas = Math.max(1, Math.ceil(total / porPagina))
+  const pagina = Math.min(Math.max(1, opcoes.pagina ?? 1), paginas)
+
+  const linhas = await prisma.ftAmyrisChecklistCarregamento.findMany({
+    where,
+    orderBy: { inicioEm: "desc" },
+    skip: (pagina - 1) * porPagina,
+    take: porPagina,
+    include: INCLUI_HISTORICO,
+  })
+
+  return { itens: linhas.map(paraItem), total, pagina, paginas }
+}
+
+export type DetalheChecklist = {
+  id: number
+  enviadoEm: string
+  inicioEm: string
+  fimEm: string
+  veiculoNumero: string
+  veiculoCapacidade: string
+  lacres: string[]
+  supervisorNome: string
+  supervisorFuncao: string
+  liderNome: string
+  liderFuncao: string
+  ocorrencia: string | null
+  enviadoPor: string
+  operadores: { nome: string; funcao: string | null }[]
+  epis: { codigo: string; nome: string; status: EpiStatus }[]
+}
+
+/** Um checklist inteiro para a tela de detalhe. CPF não sai daqui. */
+export async function obterChecklist(id: number): Promise<DetalheChecklist | null> {
+  const l = await prisma.ftAmyrisChecklistCarregamento.findUnique({
+    where: { id },
+    include: {
+      operadores: { select: { nome: true, funcao: true }, orderBy: { nome: "asc" } },
+      epis: { select: { status: true, epi: { select: { codigo: true, nome: true, ordem: true } } }, orderBy: { epi: { ordem: "asc" } } },
+    },
+  })
+  if (!l) return null
+  return {
+    id: l.id,
+    enviadoEm: l.enviadoEm.toISOString(),
+    inicioEm: l.inicioEm.toISOString(),
+    fimEm: l.fimEm.toISOString(),
+    veiculoNumero: l.veiculoNumero,
+    veiculoCapacidade: l.veiculoCapacidade,
+    lacres: l.lacres,
+    supervisorNome: l.supervisorNome,
+    supervisorFuncao: l.supervisorFuncao,
+    liderNome: l.liderNome,
+    liderFuncao: l.liderFuncao,
+    ocorrencia: l.ocorrencia,
+    enviadoPor: l.criadoPorNome ?? l.criadoPorEmail,
+    operadores: l.operadores.map((o) => ({ nome: o.nome, funcao: o.funcao })),
+    epis: l.epis.map((e) => ({ codigo: e.epi.codigo, nome: e.epi.nome, status: e.status as EpiStatus })),
+  }
 }

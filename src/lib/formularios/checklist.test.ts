@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("@/lib/prisma", () => ({ prisma: {} }))
 
-import { montarRegistro } from "./checklist"
+import { intervaloDoMes, montarRegistro } from "./checklist"
 import { EPIS, type ChecklistPayload, type PessoaSra } from "./regras"
 
 const PESSOAS: PessoaSra[] = [
@@ -38,5 +38,22 @@ describe("montarRegistro", () => {
     ])
     expect(r.epis.create).toHaveLength(7)
     expect(r.epis.create[0]).toEqual({ epiCodigo: "luva", status: "sim" })
+  })
+})
+
+describe("intervaloDoMes", () => {
+  it("cobre o mês inteiro em hora de Brasília", () => {
+    const r = intervaloDoMes("2026-09")
+    expect(r?.inicio.toISOString()).toBe("2026-09-01T03:00:00.000Z")
+    expect(r?.fim.toISOString()).toBe("2026-10-01T03:00:00.000Z")
+  })
+  it("vira o ano em dezembro", () => {
+    const r = intervaloDoMes("2026-12")
+    expect(r?.fim.toISOString()).toBe("2027-01-01T03:00:00.000Z")
+  })
+  it("recusa mês inválido", () => {
+    expect(intervaloDoMes("")).toBeNull()
+    expect(intervaloDoMes("2026-13")).toBeNull()
+    expect(intervaloDoMes("setembro")).toBeNull()
   })
 })
