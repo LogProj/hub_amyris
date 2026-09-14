@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, ChevronLeft, Loader2 } from "lucide-react"
 import {
   etapaDoCampo,
+  sanitizarRascunho,
   validarChecklist,
   type CampoChecklist,
   type ChecklistPayload,
@@ -79,12 +80,13 @@ export function ChecklistWizard({
 
   const porId = useMemo(() => new Map(pessoas.map((p) => [p.id, p])), [pessoas])
 
-  // Oferece retomar o rascunho salvo (descarta pessoas que saíram da escala).
+  // Oferece retomar o rascunho salvo. Reconstruído campo a campo (nunca espalhado)
+  // para que um rascunho de formato antigo (ex.: com CPF, de antes do id opaco)
+  // não sobreviva; também descarta pessoas que saíram da escala.
   useEffect(() => {
     const salvo = ler()
-    if (salvo && temConteudo(salvo)) {
-      setOferta({ ...VAZIO, ...salvo, operadores: salvo.operadores.filter((id) => porId.has(id)) })
-    }
+    const limpo = salvo ? sanitizarRascunho(salvo, porId.keys()) : null
+    if (limpo && temConteudo(limpo)) setOferta(limpo)
     setPronto(true)
   }, [ler, porId])
 

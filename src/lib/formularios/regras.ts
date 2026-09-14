@@ -38,6 +38,19 @@ export type ChecklistPayload = {
 export type CampoChecklist = keyof ChecklistPayload
 export type ErroValidacao = { campo: CampoChecklist; mensagem: string }
 
+/** Estado do wizard: o payload mais a etapa atual (rascunho salvo no aparelho). */
+export type RascunhoChecklist = ChecklistPayload & { etapa: 1 | 2 | 3 | 4 }
+
+function parseEpis(episBrutos: unknown): ChecklistPayload["epis"] {
+  const o = (episBrutos && typeof episBrutos === "object" ? episBrutos : {}) as Record<string, unknown>
+  const epis: ChecklistPayload["epis"] = {}
+  for (const { codigo } of EPIS) {
+    const v = o[codigo]
+    epis[codigo] = EPI_STATUS.includes(v as EpiStatus) ? (v as EpiStatus) : null
+  }
+  return epis
+}
+
 export function normalizarFuncao(f: string | null | undefined): string {
   return (f ?? "")
     .normalize("NFD")
@@ -57,12 +70,6 @@ export function normalizarPayload(bruto: unknown): ChecklistPayload {
     Array.isArray(v)
       ? v.filter((x): x is string => typeof x === "string").map((s) => s.trim()).filter(Boolean)
       : []
-  const episBrutos = (o.epis && typeof o.epis === "object" ? o.epis : {}) as Record<string, unknown>
-  const epis: ChecklistPayload["epis"] = {}
-  for (const { codigo } of EPIS) {
-    const v = episBrutos[codigo]
-    epis[codigo] = EPI_STATUS.includes(v as EpiStatus) ? (v as EpiStatus) : null
-  }
   return {
     operadores: Array.from(new Set(lista(o.operadores))),
     inicioEm: texto(o.inicioEm),
@@ -70,7 +77,37 @@ export function normalizarPayload(bruto: unknown): ChecklistPayload {
     veiculoNumero: texto(o.veiculoNumero),
     veiculoCapacidade: texto(o.veiculoCapacidade),
     lacres: lista(o.lacres),
-    epis,
+    epis: parseEpis(o.epis),
+    supervisorId: texto(o.supervisorId),
+    liderId: texto(o.liderId),
+    ocorrencia: texto(o.ocorrencia),
+  }
+}
+
+/**
+ * Reconstrói um rascunho salvo no aparelho (localStorage) campo a campo, a partir
+ * de uma lista FIXA de chaves — nunca espalha (`...`) o objeto bruto. Assim, um
+ * rascunho de um formato antigo (ex.: `supervisorCpf`/`liderCpf` com CPF de
+ * verdade, de antes do id opaco existir) nunca sobrevive: toda chave que não está
+ * nesta lista é descartada, e os operadores são filtrados aos ids ainda ativos.
+ */
+export function sanitizarRascunho(bruto: unknown, idsAtivos: Iterable<string>): RascunhoChecklist {
+  const o = (bruto && typeof bruto === "object" ? bruto : {}) as Record<string, unknown>
+  const ativos = new Set(idsAtivos)
+  const texto = (v: unknown) => (typeof v === "string" ? v : "")
+  const listaTexto = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [])
+  const etapaBruta = Number(o.etapa)
+  const etapa = ([1, 2, 3, 4] as const).includes(etapaBruta as 1 | 2 | 3 | 4) ? (etapaBruta as 1 | 2 | 3 | 4) : 1
+
+  return {
+    etapa,
+    operadores: listaTexto(o.operadores).filter((id) => ativos.has(id)),
+    inicioEm: texto(o.inicioEm),
+    fimEm: texto(o.fimEm),
+    veiculoNumero: texto(o.veiculoNumero),
+    veiculoCapacidade: texto(o.veiculoCapacidade),
+    lacres: listaTexto(o.lacres),
+    epis: parseEpis(o.epis),
     supervisorId: texto(o.supervisorId),
     liderId: texto(o.liderId),
     ocorrencia: texto(o.ocorrencia),
