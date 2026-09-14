@@ -121,6 +121,20 @@ criadas por SQL escrito à mão que só faz `CREATE TABLE IF NOT EXISTS` (aprova
 - Smoke manual das telas em viewport 390×844 (lista, wizard completo, envio, histórico,
   rascunho retomado).
 
+## Ajustes pedidos em 2026-09-14 (increment 2)
+
+Depois de ver as telas rodando, o usuário pediu três mudanças. Plano:
+`docs/superpowers/plans/2026-09-14-checklist-carregamento-ajustes.md`.
+
+1. **Tela 1A sem os "Em breve".** Os formulários futuros (Inspeção Veicular, Inspeção de
+   EPI, Registro de Ocorrência) saem da lista — não está definido que existirão.
+2. **Campos de escolha em painel deslizante** (decisão do usuário), no mesmo padrão do
+   painel de operadores: calendário com hora para início/fim; lista com busca para
+   supervisor e líder. Nada de `datetime-local` nem `<select>` nativo.
+3. **Histórico completo:** filtro por mês **do carregamento** (data de início), paginado
+   (20 por página) e com **tela própria de detalhe** por checklist (`/formularios/historico/[id]`)
+   mostrando operadores, os 7 EPIs, veículo, lacres, responsáveis, ocorrência e quem enviou.
+
 ## Fora de escopo
 
 Offline-first/PWA, edição ou exclusão de checklist enviado, exportação, os formulários
