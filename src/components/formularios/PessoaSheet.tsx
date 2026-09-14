@@ -1,10 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Check, Search } from "lucide-react"
-import { formatarFuncao, iniciais, type PessoaSra } from "@/lib/formularios/regras"
+import type { PessoaSra } from "@/lib/formularios/regras"
+import { ListaPessoas } from "./ListaPessoas"
 import { Sheet } from "./Sheet"
-import { GRAD } from "./ui"
 
 export function PessoaSheet({
   aberto,
@@ -23,61 +21,19 @@ export function PessoaSheet({
   onSelecionar: (cpf: string) => void
   onFechar: () => void
 }) {
-  const [busca, setBusca] = useState("")
-  useEffect(() => {
-    if (aberto) setBusca("")
-  }, [aberto])
-
-  const resultados = useMemo(() => {
-    const q = busca.trim().toLowerCase()
-    return q ? pessoas.filter((p) => p.nome.toLowerCase().includes(q)) : pessoas
-  }, [busca, pessoas])
-
   return (
     <Sheet aberto={aberto} titulo={titulo} subtitulo={subtitulo} onFechar={onFechar}>
-      {pessoas.length > 6 && (
-        <div className="relative mb-3 shrink-0">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[17px] w-[17px] -translate-y-1/2 text-[#6D5E78]" />
-          <input
-            autoFocus
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nome…"
-            className="h-12 w-full rounded-2xl border border-[#E7DEED] bg-[#FBF8FF] pl-10 pr-3 text-[13px] outline-none focus:border-[rgba(75,0,133,.5)] focus:shadow-[0_0_0_3px_rgba(75,0,133,.16)]"
-          />
-        </div>
-      )}
-      <div className="-mx-1 flex-1 space-y-[7px] overflow-y-auto px-1 pb-1">
-        {resultados.length === 0 && <p className="py-6 text-center text-sm text-[#8F82A0]">Ninguém encontrado.</p>}
-        {resultados.map((p) => {
-          const on = selecionado === p.cpf
-          return (
-            <button
-              key={p.cpf}
-              type="button"
-              onClick={() => {
-                onSelecionar(p.cpf)
-                onFechar()
-              }}
-              className="flex w-full items-center gap-[11px] rounded-2xl border p-2.5 text-left transition"
-              style={{ background: on ? "#F7F3FD" : "#fff", borderColor: on ? "rgba(124,58,237,.35)" : "#E7DEED" }}
-            >
-              <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[11px] bg-[#F4F0FB] text-xs font-bold text-[#4B0085]">
-                {iniciais(p.nome)}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[13px] font-semibold text-[#201429]">{p.nome}</span>
-                <span className="truncate text-[10px] text-[#6D5E78]">{formatarFuncao(p.funcao)}</span>
-              </span>
-              {on && (
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[9px] text-white" style={{ background: GRAD }}>
-                  <Check className="h-[15px] w-[15px]" />
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+      <ListaPessoas
+        aberto={aberto}
+        pessoas={pessoas}
+        modo="unica"
+        selecionado={selecionado}
+        onSelecionar={(cpf) => {
+          onSelecionar(cpf)
+          onFechar()
+        }}
+        ocultarBuscaSeCurta
+      />
     </Sheet>
   )
 }
