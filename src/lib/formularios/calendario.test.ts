@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { HORAS, formatarDataHora, gradeDoMes, juntar, rotuloMesAno, separar } from "./calendario"
+import { HORAS, formatarDataHora, gradeDoMes, horaValida, juntar, normalizarHora, rotuloMesAno, separar } from "./calendario"
 
 describe("separar / juntar", () => {
   it("separa data e hora", () => {
@@ -62,5 +62,28 @@ describe("HORAS", () => {
     expect(HORAS[0]).toBe("00:00")
     expect(HORAS[1]).toBe("00:30")
     expect(HORAS[47]).toBe("23:30")
+  })
+})
+
+describe("horaValida", () => {
+  it("aceita HH:MM de 00:00 a 23:59", () => {
+    expect(horaValida("00:00")).toBe(true)
+    expect(horaValida("07:45")).toBe(true)
+    expect(horaValida("23:59")).toBe(true)
+  })
+  it("recusa formato ou faixa inválidos", () => {
+    for (const h of ["", "7:45", "24:00", "07:60", "0745", "ab:cd"]) expect(horaValida(h)).toBe(false)
+  })
+})
+
+describe("normalizarHora", () => {
+  it("completa o que a pessoa digitou", () => {
+    expect(normalizarHora("745")).toBe("07:45")
+    expect(normalizarHora("1945")).toBe("19:45")
+    expect(normalizarHora("7:5")).toBe("07:05")
+    expect(normalizarHora(" 07:45 ")).toBe("07:45")
+  })
+  it("devolve vazio para o que não dá para interpretar", () => {
+    for (const h of ["", "abc", "99:99", "2560"]) expect(normalizarHora(h)).toBe("")
   })
 })

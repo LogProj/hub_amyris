@@ -51,4 +51,35 @@ export function hojeBrasilia(): string {
   }).format(new Date())
 }
 
+const HORA = /^([01]\d|2[0-3]):([0-5]\d)$/
+
+export function horaValida(hora: string): boolean {
+  return HORA.test(hora ?? "")
+}
+
+/** Aceita "745", "7:5", "19:45" e devolve "HH:MM"; "" quando não dá para interpretar. */
+export function normalizarHora(bruto: string): string {
+  const limpo = (bruto ?? "").trim()
+  if (!limpo) return ""
+
+  const comSeparador = /^(\d{1,2})\D(\d{1,2})$/.exec(limpo)
+  const soDigitos = /^\d{3,4}$/.test(limpo) ? limpo : null
+
+  let h: number
+  let min: number
+  if (comSeparador) {
+    h = Number(comSeparador[1])
+    min = Number(comSeparador[2])
+  } else if (soDigitos) {
+    min = Number(soDigitos.slice(-2))
+    h = Number(soDigitos.slice(0, -2))
+  } else {
+    return ""
+  }
+
+  if (h > 23 || min > 59) return ""
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`
+}
+
+// sugestões rápidas
 export const HORAS: string[] = Array.from({ length: 48 }, (_, i) => `${dois(Math.floor(i / 2))}:${i % 2 ? "30" : "00"}`)
