@@ -26,7 +26,7 @@ export type EstadoChecklist = ChecklistPayload & { etapa: Etapa }
 export type Erros = Partial<Record<CampoChecklist, string>>
 
 const TITULOS = ["Equipe e período", "EPIs da equipe", "Veículo e lacres", "Responsáveis"]
-const ABAS = ["Equipe", "EPIs", "Veículo", "Fecho"]
+const ABAS = ["Equipe", "EPIs", "Veículo", "Responsável"]
 
 const VAZIO: EstadoChecklist = {
   etapa: 1,
@@ -80,20 +80,32 @@ export function ChecklistWizard({
 
   const porId = useMemo(() => new Map(pessoas.map((p) => [p.id, p])), [pessoas])
 
+  // Escala indisponível/vazia (falha na SRA): sanitizarRascunho filtraria TODOS os
+  // operadores (porId ficaria vazio), esvaziando qualquer rascunho salvo. Sem essa
+  // guarda, o card "Retomar preenchimento?" apareceria mesmo assim (outros campos
+  // sobrevivem), e o auto-save gravaria a seleção de operadores já zerada por cima
+  // do rascunho bom, perdendo-a para sempre e sem aviso. Então: nem lê nem
+  // sobrescreve o rascunho enquanto a escala estiver assim.
+  const escalaUtilizavel = !erroSra && pessoas.length > 0
+
   // Oferece retomar o rascunho salvo. Reconstruído campo a campo (nunca espalhado)
   // para que um rascunho de formato antigo (ex.: com CPF, de antes do id opaco)
   // não sobreviva; também descarta pessoas que saíram da escala.
   useEffect(() => {
+    if (!escalaUtilizavel) {
+      setPronto(true)
+      return
+    }
     const salvo = ler()
     const limpo = salvo ? sanitizarRascunho(salvo, porId.keys()) : null
     if (limpo && temConteudo(limpo)) setOferta(limpo)
     setPronto(true)
-  }, [ler, porId])
+  }, [ler, porId, escalaUtilizavel])
 
   // Auto-save a cada mudança (não sobrescreve o rascunho enquanto a oferta está aberta).
   useEffect(() => {
-    if (pronto && !oferta && enviadoId === null && temConteudo(estado)) salvar(estado)
-  }, [estado, pronto, oferta, enviadoId, salvar])
+    if (escalaUtilizavel && pronto && !oferta && enviadoId === null && temConteudo(estado)) salvar(estado)
+  }, [estado, pronto, oferta, enviadoId, salvar, escalaUtilizavel])
 
   const payload = paraPayload(estado)
   const erros: Erros = tentouEnviar ? { ...mapaErros(validarChecklist(payload, pessoas)), ...errosServidor } : {}

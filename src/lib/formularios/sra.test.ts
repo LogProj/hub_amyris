@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { idDaPessoa } from "./identificadores"
-import { mapearPessoas } from "./sra"
+import { mapearPessoas, paraCliente } from "./sra"
 
 describe("mapearPessoas", () => {
   it("apara campos, descarta linha sem cpf, ordena por nome e calcula o id opaco", () => {
@@ -16,5 +16,12 @@ describe("mapearPessoas", () => {
       { id: idDaPessoa("2"), cpf: "2", nome: "Bruno", funcao: "SUPERVISOR DE LOGISTICA" },
       { id: idDaPessoa("3"), cpf: "3", nome: "—", funcao: null },
     ])
+  })
+})
+
+describe("paraCliente", () => {
+  it("não deixa CPF ir para o cliente", () => {
+    const pessoas = mapearPessoas([{ cpf: "12345678901", nome: "Ana", descricao_funcao: null }])
+    expect(JSON.stringify(paraCliente(pessoas))).not.toContain("12345678901")
   })
 })

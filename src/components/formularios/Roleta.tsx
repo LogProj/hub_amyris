@@ -37,6 +37,13 @@ export function Roleta({
     if (Math.abs(lista.scrollTop - alvo) > 1) lista.scrollTop = alvo
   }, [indice])
 
+  // Limpa o timer de debounce do scroll se o componente desmontar antes dele disparar.
+  useEffect(() => {
+    return () => {
+      if (rolando.current) clearTimeout(rolando.current)
+    }
+  }, [])
+
   // Ao parar de rolar, o item do centro vira o valor escolhido — uma única vez por parada.
   function aoRolar() {
     const lista = refLista.current

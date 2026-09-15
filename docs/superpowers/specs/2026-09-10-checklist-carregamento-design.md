@@ -57,8 +57,9 @@ select distinct on (cpf) nome, cpf, descricao_funcao, escala, situacao
 ```
 
 - **Todos os ativos**, sem filtro de situação (NORMAL / FÉRIAS / AFASTADO).
-- Sob o nome exibe **só a função** (a SRA não tem matrícula). CPF nunca aparece na tela; é só
-  identificador interno.
+- Sob o nome exibe **só a função** (a SRA não tem matrícula). O CPF nunca aparece na tela e
+  nunca sai do servidor: cada pessoa recebe um identificador opaco (HMAC do CPF), e é esse
+  id — nunca o CPF — que chega ao navegador, ao rascunho no aparelho e às requisições.
 
 | Campo | Funções aceitas |
 |---|---|
@@ -109,8 +110,9 @@ criadas por SQL escrito à mão que só faz `CREATE TABLE IF NOT EXISTS` (aprova
   resumo e botões "Novo checklist" / "Ver histórico".
 - **Rascunho** em `localStorage` a cada mudança, chave por usuário; ao reabrir oferece
   "Retomar preenchimento?". (Mitiga queda de sinal no pátio; não é offline-first.)
-- **Histórico:** últimos 50 envios de **todos os usuários** (conferência entre turnos), com
-  data, veículo, nº de operadores, resumo de EPIs e quem enviou.
+- **Histórico:** envios de **todos os usuários** (conferência entre turnos), filtrável por mês
+  do carregamento e paginado (20 por página), com data, veículo, nº de operadores, resumo de
+  EPIs e quem enviou — ver "Estado atual" abaixo.
 
 ## Verificação
 
@@ -139,3 +141,20 @@ Depois de ver as telas rodando, o usuário pediu três mudanças. Plano:
 
 Offline-first/PWA, edição ou exclusão de checklist enviado, exportação, os formulários
 "em breve", indicador de EPI a partir desses dados.
+
+## Estado atual (2026-09-14)
+
+Depois dos ajustes do increment 2 e da revisão final de código, o comportamento em produção é:
+
+- **Identificador opaco por pessoa:** o CPF nunca sai do servidor — nem para a tela, nem para
+  o rascunho salvo no aparelho, nem nas requisições. O que circula é um HMAC do CPF.
+- **Rascunho saneado por whitelist e limpo ao sair:** ao reabrir o formulário, o rascunho salvo
+  é reconstruído campo a campo (nunca espalhado) contra a escala atual — pessoas que saíram da
+  escala somem da seleção; e se a escala não puder ser carregada, o rascunho não é oferecido
+  nem sobrescrito, para não perder o preenchimento por engano. O rascunho é apagado do aparelho
+  assim que o envio é confirmado.
+- **Histórico filtrável por mês do carregamento**, 20 por página, com tela de detalhe própria
+  por checklist.
+- **Horário por roletas de hora e minuto** (sem segundos) — mantido como está hoje; não é um
+  `datetime-local` nem `<select>` nativo.
+- **Formulários "em breve" removidos da lista** — a tela 1A mostra só "Carregamento".

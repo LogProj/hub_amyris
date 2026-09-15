@@ -15,6 +15,14 @@ if (!arquivo) {
 const sql = fs.readFileSync(arquivo, "utf8")
 
 // Remove comentários de linha (--) e divide em instruções por ";".
+// Por que o split ingênuo por ";" é seguro mesmo sem entender SQL de verdade: ele
+// SUPER-divide (por exemplo, um ";" dentro de uma string quebraria em pedaços que
+// isoladamente não são frases completas). Um pedaço torto assim não bate com
+// nenhum regex da allow-list, então o arquivo INTEIRO é rejeitado antes de
+// conectar no banco — ele falha fechado, nunca aberto. NÃO "consertar" isso para
+// um parser mais esperto sem manter essa propriedade. Comentários em bloco
+// (/* ... */) não são removidos por este código — se aparecerem, o conteúdo
+// dentro deles também não vai bater com a allow-list e o arquivo será rejeitado.
 function dividirEmInstrucoes(texto) {
   const semComentarios = texto
     .split("\n")
