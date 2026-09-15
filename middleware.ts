@@ -29,9 +29,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Já logado tentando abrir /login → manda para o app.
+  // Já logado tentando abrir /login → manda para a raiz, que resolve a primeira
+  // tela permitida (checagem barata, sem banco: não pode mandar direto para
+  // /dashboards, pois quem só tem Formulários cairia numa tela bloqueada).
   if (pathname === "/login" && temSessao) {
-    return NextResponse.redirect(new URL("/dashboards", request.url))
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
   return NextResponse.next()

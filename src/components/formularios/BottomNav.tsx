@@ -42,7 +42,7 @@ export function BottomNav() {
         <button type="button" onClick={() => router.back()} className={cn(item, "text-[#8F82A0] hover:bg-[#F4F0FB] hover:text-[#4B0085]")}>
           <ArrowLeft className="h-5 w-5" /> Voltar
         </button>
-        <button type="button" onClick={() => router.push("/dashboards")} className={cn(item, "text-[#8F82A0] hover:bg-[#F4F0FB] hover:text-[#4B0085]")}>
+        <button type="button" onClick={() => router.push("/")} className={cn(item, "text-[#8F82A0] hover:bg-[#F4F0FB] hover:text-[#4B0085]")}>
           <Home className="h-5 w-5" /> Início
         </button>
         <button
