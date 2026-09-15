@@ -7,18 +7,9 @@ import { Loader2, Lock, Mail, ShieldCheck, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { proximaRotaSegura } from "@/lib/rota-segura"
 
 type Step = "credentials" | "twoFactor"
-
-// Só aceita caminho relativo do próprio site (começando com uma única "/",
-// nunca "//" ou "/\"), evitando redirecionar para um domínio externo via
-// ?next=. Sem "next" seguro, cai na raiz — que resolve a primeira tela
-// permitida para a pessoa.
-function proximaRotaSegura(next: string | null): string {
-  if (!next) return "/"
-  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/"
-  return next
-}
 
 export function LoginForm() {
   const router = useRouter()

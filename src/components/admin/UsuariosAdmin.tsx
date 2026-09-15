@@ -19,7 +19,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { UsuarioAdminRow, UsuariosResponse } from "@/lib/admin-types"
-import { HUB_SCREENS } from "@/lib/screens"
+import { HUB_SCREENS, HUB_SCREEN_KEYS } from "@/lib/screens"
+
+/** Telas deste hub dentro de uma lista que pode conter chaves de outros hubs
+ * (compartilham a mesma tabela) — usada só para exibição/edição no admin; o
+ * que é enviado ao salvar já é saneado e mesclado no servidor. */
+function telasDesteHub(visibleScreens: string[] | null | undefined): string[] {
+  const conhecidas = new Set(HUB_SCREEN_KEYS)
+  return (visibleScreens ?? []).filter((k) => conhecidas.has(k))
+}
 
 const EMPTY_FORM = { nome: "", email: "", cpf: "", senha: "", isAdmin: false }
 
@@ -144,7 +152,7 @@ export function UsuariosAdmin() {
 
   function abrirTelas(u: UsuarioAdminRow) {
     setTelasUser(u)
-    setTelasSel(u.visibleScreens ?? [])
+    setTelasSel(telasDesteHub(u.visibleScreens))
   }
 
   function toggleTela(key: string) {
@@ -290,7 +298,7 @@ export function UsuariosAdmin() {
                               className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-amyris-mist hover:text-amyris"
                             >
                               <Monitor className="h-3 w-3" />
-                              {u.visibleScreens?.length ?? 0} de {HUB_SCREENS.length}
+                              {telasDesteHub(u.visibleScreens).length} de {HUB_SCREENS.length}
                             </button>
                           )
                         ) : (

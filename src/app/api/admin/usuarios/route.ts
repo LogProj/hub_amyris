@@ -141,7 +141,6 @@ export async function POST(request: Request) {
   if (existente && existente.hasAccess) {
     return NextResponse.json({ error: "Já existe um usuário com acesso a esse e-mail." }, { status: 409 })
   }
-  const visibleScreensMescladas = mesclarTelas(existente?.visibleScreens, body.visibleScreens)
 
   // Cria a IDENTIDADE no global_auth (CPF + senha obrigatórios lá).
   let authUserId: string | null = null
@@ -158,6 +157,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: message }, { status })
     }
   }
+
+  // Relê visibleScreens imediatamente antes de escrever — entre a leitura
+  // acima e aqui houve uma chamada de rede ao global_auth (createGlobalAuthUser),
+  // que pode levar segundos; uma escrita concorrente nesse intervalo não pode
+  // ser perdida (mesma classe de bug que mesclarTelas existe para evitar).
+  const atual = await prisma.authUser.findUnique({ where: { email } })
+  const visibleScreensMescladas = mesclarTelas(atual?.visibleScreens, body.visibleScreens)
 
   const criado = await prisma.authUser.upsert({
     where: { email },

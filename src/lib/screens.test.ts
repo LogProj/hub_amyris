@@ -47,17 +47,24 @@ describe("mesclarTelas", () => {
   it("mantém chaves de outros hubs quando o admin salva um subconjunto deste hub", () => {
     const existentes = ["absenteismo", "desvios-painel", "enjoei-turnover", "home"]
     // admin editou no modal e agora só quer manter "absenteismo" deste hub
-    expect(mesclarTelas(existentes, ["absenteismo"])).toEqual(
-      expect.arrayContaining(["absenteismo", "desvios-painel", "enjoei-turnover", "home"]),
-    )
-    expect(mesclarTelas(existentes, ["absenteismo"])).toHaveLength(4)
+    expect(mesclarTelas(existentes, ["absenteismo"])).toEqual([
+      "absenteismo",
+      "desvios-painel",
+      "enjoei-turnover",
+      "home",
+    ])
+  })
+
+  it("remove uma tela deste hub que o admin desmarcou, sem tocar nas de outros hubs", () => {
+    expect(mesclarTelas(["absenteismo", "turnover", "desvios-painel"], ["absenteismo"])).toEqual([
+      "absenteismo",
+      "desvios-painel",
+    ])
   })
 
   it("adiciona uma chave conhecida recém-concedida", () => {
     const existentes = ["desvios-painel"]
-    const resultado = mesclarTelas(existentes, ["formularios"])
-    expect(resultado).toEqual(expect.arrayContaining(["formularios", "desvios-painel"]))
-    expect(resultado).toHaveLength(2)
+    expect(mesclarTelas(existentes, ["formularios"])).toEqual(["formularios", "desvios-painel"])
   })
 
   it("descarta lixo desconhecido do payload que não pertence a nenhuma tela deste hub", () => {
@@ -77,8 +84,9 @@ describe("mesclarTelas", () => {
   })
 
   it("não duplica uma chave presente nas duas listas", () => {
-    const resultado = mesclarTelas(["formularios", "desvios-painel"], ["formularios"])
-    expect(resultado).toEqual(expect.arrayContaining(["formularios", "desvios-painel"]))
-    expect(resultado).toHaveLength(2)
+    expect(mesclarTelas(["formularios", "desvios-painel"], ["formularios"])).toEqual([
+      "formularios",
+      "desvios-painel",
+    ])
   })
 })
