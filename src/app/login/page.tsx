@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Sparkles, ShieldCheck, Leaf } from "lucide-react"
 
 import { HeroCanvas } from "@/components/HeroCanvas"
@@ -63,7 +64,9 @@ export default function LoginPage() {
           </div>
 
           <div className="reveal delay-1 mt-8 rounded-3xl border border-amyris/10 bg-white/80 p-7 shadow-soft backdrop-blur-xl sm:p-8">
-            <LoginForm />
+            <Suspense fallback={null}>
+              <LoginForm />
+            </Suspense>
           </div>
 
           <p className="reveal delay-2 mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">

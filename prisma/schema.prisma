@@ -31,3 +31,69 @@ model AuthUser {
 
   @@map("auth_users")
 }
+
+// ---------------------------------------------------------------------------
+// Checklist de Carregamento (formulário mobile). Tabelas criadas por
+// prisma/sql/2026-09-11-checklist-carregamento.sql — NUNCA via db push/migrate:
+// o DATABASE_URL é o db_inhaus compartilhado.
+// ---------------------------------------------------------------------------
+
+model DmAmyrisEpi {
+  codigo    String                             @id
+  nome      String
+  ordem     Int
+  ativo     Boolean                            @default(true)
+  respostas FtAmyrisChecklistCarregamentoEpi[]
+
+  @@map("dm_amyris_epi")
+}
+
+model FtAmyrisChecklistCarregamento {
+  id                Int                                     @id @default(autoincrement())
+  criadoPorId       Int?                                    @map("criado_por_id")
+  criadoPorEmail    String                                  @map("criado_por_email")
+  criadoPorNome     String?                                 @map("criado_por_nome")
+  inicioEm          DateTime                                @map("inicio_em") @db.Timestamptz(6)
+  fimEm             DateTime                                @map("fim_em") @db.Timestamptz(6)
+  veiculoNumero     String                                  @map("veiculo_numero")
+  veiculoCapacidade String                                  @map("veiculo_capacidade")
+  lacres            String[]                                @default([])
+  supervisorCpf     String                                  @map("supervisor_cpf")
+  supervisorNome    String                                  @map("supervisor_nome")
+  supervisorFuncao  String                                  @map("supervisor_funcao")
+  liderCpf          String                                  @map("lider_cpf")
+  liderNome         String                                  @map("lider_nome")
+  liderFuncao       String                                  @map("lider_funcao")
+  ocorrencia        String?
+  enviadoEm         DateTime                                @default(now()) @map("enviado_em") @db.Timestamptz(6)
+  operadores        FtAmyrisChecklistCarregamentoOperador[]
+  epis              FtAmyrisChecklistCarregamentoEpi[]
+
+  @@index([enviadoEm(sort: Desc)])
+  @@index([inicioEm(sort: Desc)])
+  @@map("ft_amyris_checklist_carregamento")
+}
+
+model FtAmyrisChecklistCarregamentoOperador {
+  id          Int                           @id @default(autoincrement())
+  checklistId Int                           @map("checklist_id")
+  cpf         String
+  nome        String
+  funcao      String?
+  checklist   FtAmyrisChecklistCarregamento @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@unique([checklistId, cpf])
+  @@map("ft_amyris_checklist_carregamento_operador")
+}
+
+model FtAmyrisChecklistCarregamentoEpi {
+  id          Int                           @id @default(autoincrement())
+  checklistId Int                           @map("checklist_id")
+  epiCodigo   String                        @map("epi_codigo")
+  status      String
+  checklist   FtAmyrisChecklistCarregamento @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  epi         DmAmyrisEpi                   @relation(fields: [epiCodigo], references: [codigo])
+
+  @@unique([checklistId, epiCodigo])
+  @@map("ft_amyris_checklist_carregamento_epi")
+}

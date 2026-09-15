@@ -3,8 +3,10 @@ import nextDynamic from "next/dynamic"
 import { AlertTriangle, ShieldCheck, Activity, UserX, CalendarX } from "lucide-react"
 
 import { MonthFilter } from "@/components/dashboard/MonthFilter"
+import { SemAcesso } from "@/components/dashboard/SemAcesso"
 import { getSessionReadOnly } from "@/lib/auth-session"
 import { getEpiData, type EpiData } from "@/lib/epi"
+import { podeVerTela } from "@/lib/screens"
 
 const EpiAderenciaChart = nextDynamic(() =>
   import("@/components/dashboard/EpiCharts").then((m) => m.EpiAderenciaChart),
@@ -25,14 +27,7 @@ export default async function EpiPage({ searchParams }: { searchParams: { mes?: 
   // Gate por papel: admin ou quem tem a tela "epi" concedida.
   const s = await getSessionReadOnly()
   const auth = s.status === "ok" ? s.sessao.authorization : null
-  const podeVer = Boolean(auth?.isAdmin || auth?.visibleScreens?.includes("epi"))
-  if (!podeVer) {
-    return (
-      <div className="mt-8 rounded-2xl border border-amyris/10 bg-amyris-mist/50 p-6 text-sm text-muted-foreground">
-        Você não tem acesso a este painel. Peça a um administrador para conceder a tela <strong>EPI</strong>.
-      </div>
-    )
-  }
+  if (!podeVerTela(auth, "epi")) return <SemAcesso tela="EPI" />
 
   let data: EpiData | null = null
   let erro: string | null = null

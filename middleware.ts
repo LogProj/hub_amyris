@@ -13,7 +13,7 @@ const ACCESS_COOKIE = `${COOKIE_PREFIX}_access_token`
 const REFRESH_COOKIE = `${COOKIE_PREFIX}_refresh_token`
 
 // Prefixos de rota que exigem sessão.
-const protectedRoutes = ["/dashboards"]
+const protectedRoutes = ["/dashboards", "/formularios"]
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -29,14 +29,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Já logado tentando abrir /login → manda para o app.
+  // Já logado tentando abrir /login → manda para a raiz, que resolve a primeira
+  // tela permitida (checagem barata, sem banco: não pode mandar direto para
+  // /dashboards, pois quem só tem Formulários cairia numa tela bloqueada).
   if (pathname === "/login" && temSessao) {
-    return NextResponse.redirect(new URL("/dashboards", request.url))
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/dashboards/:path*", "/login"],
+  matcher: ["/dashboards/:path*", "/formularios/:path*", "/login"],
 }

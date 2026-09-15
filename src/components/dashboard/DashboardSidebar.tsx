@@ -9,6 +9,7 @@ import {
   Inbox,
   Send,
   Users,
+  ClipboardList,
   HardHat,
   ShieldAlert,
   UserCog,
@@ -39,6 +40,10 @@ const GROUPS: NavGroup[] = [
   {
     title: "Geral",
     items: [{ href: "/dashboards", label: "Visão geral", icon: LayoutDashboard }],
+  },
+  {
+    title: "Registros",
+    items: [{ href: "/formularios", label: "Formulários", icon: ClipboardList }],
   },
   {
     title: "Almoxarifado",

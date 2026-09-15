@@ -38,3 +38,15 @@ painel. Não deixar o info desatualizado em relação ao código.
   RPA, banco de dados ou qualquer termo técnico/de programação. Fale de pessoas,
   presenças, faltas, admissões, desligamentos, quadro — não de como o dado é
   armazenado ou processado.
+
+## Banco de dados — NUNCA `prisma db push` / `migrate` (OBRIGATÓRIO)
+
+O `DATABASE_URL` do Prisma aponta para o **db_inhaus**, banco COMPARTILHADO com outros
+sistemas (dezenas de tabelas e views que o schema deste projeto não conhece).
+`prisma db push`, `migrate dev/deploy/reset` tentariam deixar o banco igual ao schema e
+**apagariam tabelas alheias**. Por isso `npm run db:push` está bloqueado.
+
+Tabela nova = arquivo `.sql` só-criação em `prisma/sql/` (`create table if not exists`,
+sem DROP/ALTER/TRUNCATE/DELETE) aplicado com `node scripts/aplicar-sql.mjs <arquivo>`,
+e o model correspondente no `schema.prisma` com `@@map`. Tabelas do hub seguem o
+padrão dimensional `dm_amyris_*` (cadastros) / `ft_amyris_*` (registros).

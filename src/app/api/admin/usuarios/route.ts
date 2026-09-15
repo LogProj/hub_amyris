@@ -10,7 +10,7 @@ import {
   normalizeEmail,
 } from "@/lib/global-auth"
 import { prisma } from "@/lib/prisma"
-import { sanitizeScreens } from "@/lib/screens"
+import { mesclarTelas, sanitizeScreens } from "@/lib/screens"
 import type { UsuarioAdminRow } from "@/lib/admin-types"
 
 export const dynamic = "force-dynamic"
@@ -158,6 +158,13 @@ export async function POST(request: Request) {
     }
   }
 
+  // Relê visibleScreens imediatamente antes de escrever — entre a leitura
+  // acima e aqui houve uma chamada de rede ao global_auth (createGlobalAuthUser),
+  // que pode levar segundos; uma escrita concorrente nesse intervalo não pode
+  // ser perdida (mesma classe de bug que mesclarTelas existe para evitar).
+  const atual = await prisma.authUser.findUnique({ where: { email } })
+  const visibleScreensMescladas = mesclarTelas(atual?.visibleScreens, body.visibleScreens)
+
   const criado = await prisma.authUser.upsert({
     where: { email },
     update: {
@@ -165,7 +172,7 @@ export async function POST(request: Request) {
       authUserId: authUserId ?? undefined,
       hasAccess: true,
       isAdmin: !!body.isAdmin,
-      visibleScreens,
+      visibleScreens: visibleScreensMescladas,
     },
     create: { email, name: nome, authUserId, hasAccess: true, isAdmin: !!body.isAdmin, visibleScreens },
   })
