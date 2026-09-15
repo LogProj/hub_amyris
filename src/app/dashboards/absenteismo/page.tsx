@@ -6,6 +6,8 @@ import { AttendanceGrid } from "@/components/dashboard/AttendanceGrid"
 import { HeadcountKpis } from "@/components/dashboard/HeadcountKpis"
 import { MonthFilter } from "@/components/dashboard/MonthFilter"
 import { RegrasInfo } from "@/components/dashboard/RegrasInfo"
+import { SemAcesso } from "@/components/dashboard/SemAcesso"
+import { getSessionReadOnly } from "@/lib/auth-session"
 import { META_ABSENTEISMO_PCT } from "@/lib/headcount-constants"
 import {
   getHeadcount,
@@ -14,6 +16,7 @@ import {
   type Headcount,
   type PresencasTimeline as TimelineData,
 } from "@/lib/headcount"
+import { podeVerTela } from "@/lib/screens"
 
 const AderenciaChart = nextDynamic(() =>
   import("@/components/dashboard/AderenciaChart").then((m) => m.AderenciaChart),
@@ -41,6 +44,10 @@ export default async function AbsenteismoPage({
 }: {
   searchParams: { mes?: string }
 }) {
+  const s = await getSessionReadOnly()
+  const auth = s.status === "ok" ? s.sessao.authorization : null
+  if (!podeVerTela(auth, "absenteismo")) return <SemAcesso tela="Absenteísmo" />
+
   let meses: string[] = []
   let data: Headcount | null = null
   let timeline: TimelineData | null = null

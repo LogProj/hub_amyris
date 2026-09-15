@@ -13,8 +13,10 @@ import {
 import { MonthFilter } from "@/components/dashboard/MonthFilter"
 import { OcorrenciasInfo } from "@/components/dashboard/OcorrenciasInfo"
 import { InfoDica } from "@/components/dashboard/InfoDica"
+import { SemAcesso } from "@/components/dashboard/SemAcesso"
 import { getSessionReadOnly } from "@/lib/auth-session"
 import { getOcorrenciasData, type OcorrenciasData, type Item } from "@/lib/ocorrencias"
+import { podeVerTela } from "@/lib/screens"
 
 const MesBarChart = nextDynamic(() =>
   import("@/components/dashboard/OcorrenciasCharts").then((m) => m.MesBarChart),
@@ -37,15 +39,7 @@ function dataBR(iso: string) {
 export default async function OcorrenciasPage({ searchParams }: { searchParams: { mes?: string } }) {
   const s = await getSessionReadOnly()
   const auth = s.status === "ok" ? s.sessao.authorization : null
-  const podeVer = Boolean(auth?.isAdmin || auth?.visibleScreens?.includes("ocorrencias"))
-  if (!podeVer) {
-    return (
-      <div className="mt-8 rounded-2xl border border-amyris/10 bg-amyris-mist/50 p-6 text-sm text-muted-foreground">
-        Você não tem acesso a este painel. Peça a um administrador para conceder a tela{" "}
-        <strong>Controle de Ocorrências</strong>.
-      </div>
-    )
-  }
+  if (!podeVerTela(auth, "ocorrencias")) return <SemAcesso tela="Controle de Ocorrências" />
 
   let data: OcorrenciasData | null = null
   let erro: string | null = null

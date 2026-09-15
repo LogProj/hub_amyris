@@ -4,8 +4,11 @@ import { AlertTriangle } from "lucide-react"
 
 import { DesligadosRecentes } from "@/components/dashboard/DesligadosRecentes"
 import { MonthFilter } from "@/components/dashboard/MonthFilter"
+import { SemAcesso } from "@/components/dashboard/SemAcesso"
 import { TurnoverInfo } from "@/components/dashboard/TurnoverInfo"
 import { TurnoverKpis } from "@/components/dashboard/TurnoverKpis"
+import { getSessionReadOnly } from "@/lib/auth-session"
+import { podeVerTela } from "@/lib/screens"
 import { getTurnoverData, type TurnoverData } from "@/lib/turnover"
 
 const AdmissoesDesligamentosChart = nextDynamic(() =>
@@ -38,6 +41,10 @@ export default async function TurnoverPage({
 }: {
   searchParams: { mes?: string }
 }) {
+  const s = await getSessionReadOnly()
+  const auth = s.status === "ok" ? s.sessao.authorization : null
+  if (!podeVerTela(auth, "turnover")) return <SemAcesso tela="Turnover" />
+
   let data: TurnoverData | null = null
   let erro: string | null = null
 

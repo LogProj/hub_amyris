@@ -60,7 +60,7 @@ npm run dev            # http://localhost:3000
 | `AUTH_API_KEY` | Chave server-only do projeto no global_auth |
 | `AUTH_ACCESS_COOKIE_MAX_AGE_SECONDS` | Opcional (padrão 12h) |
 | `AUTH_REFRESH_COOKIE_MAX_AGE_SECONDS` | Opcional (padrão 90d) |
-| `FORMULARIOS_ID_SECRET` | Opcional (cai para `AUTH_API_KEY`); **obrigatório em produção**. Usado para derivar o identificador opaco de pessoa dos formulários |
+| `FORMULARIOS_ID_SECRET` | Opcional — não precisa ser definida. Por padrão o identificador opaco de pessoa dos formulários é derivado de `AUTH_API_KEY` (que já existe). Só faz sentido definir um segredo dedicado se quiser que esses ids sobrevivam a uma futura rotação de `AUTH_API_KEY` |
 
 ## Autenticação (global_auth)
 

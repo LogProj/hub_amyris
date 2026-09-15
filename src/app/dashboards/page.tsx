@@ -11,9 +11,12 @@ import {
 } from "lucide-react"
 
 import { TiltCard } from "@/components/TiltCard"
+import { SemAcesso } from "@/components/dashboard/SemAcesso"
+import { getSessionReadOnly } from "@/lib/auth-session"
 import { getHeadcount, getMesesDisponiveis as getMesesAbsenteismo, getPresencasTimeline } from "@/lib/headcount"
 import { getTurnoverData } from "@/lib/turnover"
 import { getOcorrenciasData } from "@/lib/ocorrencias"
+import { podeVerTela } from "@/lib/screens"
 
 export const metadata: Metadata = { title: "Visão geral" }
 
@@ -62,10 +65,20 @@ async function getResumoTurnover(): Promise<ResumoTurnover> {
 }
 
 export default async function DashboardsHome() {
+  const s = await getSessionReadOnly()
+  const auth = s.status === "ok" ? s.sessao.authorization : null
+  if (!podeVerTela(auth, "visao-geral")) return <SemAcesso tela="Visão geral" />
+
+  const podeAbsenteismo = podeVerTela(auth, "absenteismo")
+  const podeTurnover = podeVerTela(auth, "turnover")
+  const podeEpi = podeVerTela(auth, "epi")
+  const podeOcorrencias = podeVerTela(auth, "ocorrencias")
+  const nenhumIndicador = !podeAbsenteismo && !podeTurnover && !podeEpi && !podeOcorrencias
+
   const [absenteismo, turnover, ocorrencias] = await Promise.all([
-    getResumoAbsenteismo(),
-    getResumoTurnover(),
-    getResumoOcorrencias(),
+    podeAbsenteismo ? getResumoAbsenteismo() : Promise.resolve(null),
+    podeTurnover ? getResumoTurnover() : Promise.resolve(null),
+    podeOcorrencias ? getResumoOcorrencias() : Promise.resolve(null),
   ])
 
   return (
@@ -96,8 +109,15 @@ export default async function DashboardsHome() {
           <p className="text-sm text-muted-foreground">Resumo do mês corrente por indicador.</p>
         </div>
 
+        {nenhumIndicador && (
+          <p className="reveal rounded-2xl border border-amyris/10 bg-amyris-mist/50 p-6 text-sm text-muted-foreground">
+            Nenhum indicador liberado para você ainda.
+          </p>
+        )}
+
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {/* Absenteísmo */}
+          {podeAbsenteismo && (
           <TiltCard max={5}>
             <Link href="/dashboards/absenteismo" className="block h-full">
               <div className="glass reveal relative h-full overflow-hidden rounded-3xl p-6 transition-shadow hover:shadow-glow">
@@ -124,8 +144,10 @@ export default async function DashboardsHome() {
               </div>
             </Link>
           </TiltCard>
+          )}
 
           {/* Turnover */}
+          {podeTurnover && (
           <TiltCard max={5}>
             <Link href="/dashboards/turnover" className="block h-full">
               <div
@@ -159,8 +181,10 @@ export default async function DashboardsHome() {
               </div>
             </Link>
           </TiltCard>
+          )}
 
           {/* Utilização de EPIs — em breve */}
+          {podeEpi && (
           <TiltCard max={5}>
             <div
               className="glass reveal relative h-full overflow-hidden rounded-3xl p-6"
@@ -178,8 +202,10 @@ export default async function DashboardsHome() {
               <p className="text-xs text-muted-foreground">Uso correto de equipamentos de proteção</p>
             </div>
           </TiltCard>
+          )}
 
           {/* Controle de Ocorrências */}
+          {podeOcorrencias && (
           <TiltCard max={5}>
             <Link href="/dashboards/ocorrencias" className="block h-full">
               <div
@@ -211,6 +237,7 @@ export default async function DashboardsHome() {
               </div>
             </Link>
           </TiltCard>
+          )}
         </div>
       </section>
     </div>

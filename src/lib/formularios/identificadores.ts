@@ -5,9 +5,13 @@ import { createHmac } from "node:crypto"
 // requisições e instâncias, mas não permite voltar ao CPF. O servidor resolve o
 // id recalculando-o para cada pessoa da SRA do momento.
 //
-// Defina FORMULARIOS_ID_SECRET explicitamente (não dependa só do fallback para
-// AUTH_API_KEY): como AUTH_API_KEY também é usado para outra coisa (autenticação),
-// girar essa chave mudaria silenciosamente todos os ids opacos já em uso.
+// FORMULARIOS_ID_SECRET é OPCIONAL: por padrão o id é derivado de AUTH_API_KEY,
+// que já é obrigatório no projeto — nenhuma variável nova é necessária para
+// funcionar. Vale definir um segredo dedicado só se você quiser que os ids
+// sobrevivam a uma rotação futura de AUTH_API_KEY: rotacionar essa chave sem um
+// segredo dedicado faz os rascunhos de formulário ainda não enviados perderem as
+// pessoas já selecionadas (o rascunho precisa ser refeito); nada que já foi
+// enviado é afetado, pois o formulário salvo guarda cpf/nome/função, não o id.
 //
 // O segredo é resolvido em tempo de CHAMADA (dentro da função), não no topo do
 // módulo: este arquivo é importado por `sra.ts`, que `carregamento/page.tsx`
