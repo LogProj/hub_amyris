@@ -73,7 +73,7 @@ export function Roleta({
         {/* faixa de seleção fixa no centro */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-[14px] border border-[rgba(124,58,237,.35)] bg-[#F7F3FD]"
+          className="pointer-events-none absolute inset-x-0 top-1/2 z-0 -translate-y-1/2 rounded-[14px] border border-[rgba(124,58,237,.35)] bg-[#F7F3FD]"
           style={{ height: ALTURA }}
         />
         <div
@@ -83,7 +83,7 @@ export function Roleta({
           role="listbox"
           aria-label={rotulo}
           tabIndex={0}
-          className="h-full snap-y snap-mandatory overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden"
+          className="relative z-10 h-full snap-y snap-mandatory overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
           <div style={{ height: espaco }} />
