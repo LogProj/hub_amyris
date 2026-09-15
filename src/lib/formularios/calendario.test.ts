@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { HORAS, formatarDataHora, gradeDoMes, horaValida, juntar, normalizarHora, rotuloMesAno, separar } from "./calendario"
+import { HORAS_DO_DIA, MINUTOS, formatarDataHora, gradeDoMes, horaValida, juntar, rotuloMesAno, separar } from "./calendario"
 
 describe("separar / juntar", () => {
   it("separa data e hora", () => {
@@ -56,12 +56,20 @@ describe("gradeDoMes", () => {
   })
 })
 
-describe("HORAS", () => {
-  it("vai de 00:00 a 23:30 de 30 em 30 minutos", () => {
-    expect(HORAS).toHaveLength(48)
-    expect(HORAS[0]).toBe("00:00")
-    expect(HORAS[1]).toBe("00:30")
-    expect(HORAS[47]).toBe("23:30")
+describe("listas das roletas", () => {
+  it("tem 24 horas, de 00 a 23", () => {
+    expect(HORAS_DO_DIA).toHaveLength(24)
+    expect(HORAS_DO_DIA[0]).toBe("00")
+    expect(HORAS_DO_DIA[23]).toBe("23")
+  })
+  it("tem 60 minutos, de 00 a 59", () => {
+    expect(MINUTOS).toHaveLength(60)
+    expect(MINUTOS[0]).toBe("00")
+    expect(MINUTOS[45]).toBe("45")
+    expect(MINUTOS[59]).toBe("59")
+  })
+  it("todos com dois dígitos", () => {
+    for (const v of [...HORAS_DO_DIA, ...MINUTOS]) expect(v).toMatch(/^\d{2}$/)
   })
 })
 
@@ -76,14 +84,3 @@ describe("horaValida", () => {
   })
 })
 
-describe("normalizarHora", () => {
-  it("completa o que a pessoa digitou", () => {
-    expect(normalizarHora("745")).toBe("07:45")
-    expect(normalizarHora("1945")).toBe("19:45")
-    expect(normalizarHora("7:5")).toBe("07:05")
-    expect(normalizarHora(" 07:45 ")).toBe("07:45")
-  })
-  it("devolve vazio para o que não dá para interpretar", () => {
-    for (const h of ["", "abc", "99:99", "2560"]) expect(normalizarHora(h)).toBe("")
-  })
-})
