@@ -27,6 +27,24 @@ export function sanitizeScreens(input: unknown): string[] {
   return Array.from(new Set(input.filter((v): v is string => typeof v === "string" && valid.has(v))))
 }
 
+/**
+ * Telas deste hub vindas da tela de administração + as de outros hubs, que este
+ * projeto não conhece e não deve apagar.
+ *
+ * `auth_users` é uma tabela COMPARTILHADA entre vários hubs (hub_bridgestone,
+ * hub_fleury, hub_qssma…). Um usuário pode carregar chaves de tela que este
+ * projeto desconhece. Ao salvar as telas deste hub, preserva qualquer chave já
+ * existente que não pertença a HUB_SCREEN_KEYS.
+ */
+export function mesclarTelas(existentes: string[] | null | undefined, novas: unknown): string[] {
+  const desteHub = sanitizeScreens(novas)
+  const conhecidas = new Set(HUB_SCREEN_KEYS)
+  const deOutrosHubs = Array.isArray(existentes)
+    ? existentes.filter((v): v is string => typeof v === "string" && !conhecidas.has(v))
+    : []
+  return Array.from(new Set([...desteHub, ...deOutrosHubs]))
+}
+
 export type AcessoUsuario = { isAdmin: boolean; visibleScreens: string[] } | null
 
 /** Admin vê tudo; os demais só o que foi concedido. Sem sessão, nada. */

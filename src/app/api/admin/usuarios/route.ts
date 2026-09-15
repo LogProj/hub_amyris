@@ -10,7 +10,7 @@ import {
   normalizeEmail,
 } from "@/lib/global-auth"
 import { prisma } from "@/lib/prisma"
-import { sanitizeScreens } from "@/lib/screens"
+import { mesclarTelas, sanitizeScreens } from "@/lib/screens"
 import type { UsuarioAdminRow } from "@/lib/admin-types"
 
 export const dynamic = "force-dynamic"
@@ -141,6 +141,7 @@ export async function POST(request: Request) {
   if (existente && existente.hasAccess) {
     return NextResponse.json({ error: "Já existe um usuário com acesso a esse e-mail." }, { status: 409 })
   }
+  const visibleScreensMescladas = mesclarTelas(existente?.visibleScreens, body.visibleScreens)
 
   // Cria a IDENTIDADE no global_auth (CPF + senha obrigatórios lá).
   let authUserId: string | null = null
@@ -165,7 +166,7 @@ export async function POST(request: Request) {
       authUserId: authUserId ?? undefined,
       hasAccess: true,
       isAdmin: !!body.isAdmin,
-      visibleScreens,
+      visibleScreens: visibleScreensMescladas,
     },
     create: { email, name: nome, authUserId, hasAccess: true, isAdmin: !!body.isAdmin, visibleScreens },
   })

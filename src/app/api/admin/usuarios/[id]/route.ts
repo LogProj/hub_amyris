@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/lib/auth-session"
 import { prisma } from "@/lib/prisma"
-import { sanitizeScreens } from "@/lib/screens"
+import { mesclarTelas } from "@/lib/screens"
 
 export const dynamic = "force-dynamic"
 
@@ -45,7 +45,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       ...(body.nome !== undefined ? { name: body.nome?.trim() || null } : {}),
       ...(body.isAdmin !== undefined ? { isAdmin: body.isAdmin } : {}),
       ...(body.hasAccess !== undefined ? { hasAccess: body.hasAccess } : {}),
-      ...(body.visibleScreens !== undefined ? { visibleScreens: sanitizeScreens(body.visibleScreens) } : {}),
+      ...(body.visibleScreens !== undefined
+        ? { visibleScreens: mesclarTelas(alvo.visibleScreens, body.visibleScreens) }
+        : {}),
     },
   })
 

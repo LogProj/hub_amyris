@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2, Lock, Mail, ShieldCheck, ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -10,8 +10,20 @@ import { Label } from "@/components/ui/label"
 
 type Step = "credentials" | "twoFactor"
 
+// Só aceita caminho relativo do próprio site (começando com uma única "/",
+// nunca "//" ou "/\"), evitando redirecionar para um domínio externo via
+// ?next=. Sem "next" seguro, cai na raiz — que resolve a primeira tela
+// permitida para a pessoa.
+function proximaRotaSegura(next: string | null): string {
+  if (!next) return "/"
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/"
+  return next
+}
+
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const destino = proximaRotaSegura(searchParams.get("next"))
   const [step, setStep] = useState<Step>("credentials")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -40,7 +52,7 @@ export function LoginForm() {
         setStep("twoFactor")
         return
       }
-      router.push("/dashboards")
+      router.push(destino)
       router.refresh()
     } catch {
       setError("Falha de conexão. Tente novamente.")
@@ -64,7 +76,7 @@ export function LoginForm() {
         setError(data?.error ?? "Código inválido.")
         return
       }
-      router.push("/dashboards")
+      router.push(destino)
       router.refresh()
     } catch {
       setError("Falha de conexão. Tente novamente.")
