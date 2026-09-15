@@ -48,4 +48,42 @@ describe("proximaRotaSegura", () => {
     // ?next=/%09%2F%2Fevil.com → "/\t//evil.com"
     expect(proximaRotaSegura("/\t//evil.com")).toBe("/")
   })
+
+  it("vertical tab (%0B) e form feed (%0C) NÃO são removidos pelo parser — permanecem caminho interno (%-encoded), não são rejeitados", () => {
+    // ?next=/%0B/evil.com e ?next=/%0C/evil.com: \v e \f não fazem parte da
+    // whitelist de controle removido pelo parser de URL, então o "/evil.com"
+    // não vira autoridade — o resultado é um path relativo mesmo-origem.
+    expect(proximaRotaSegura("/\v/evil.com")).toBe("/%0B/evil.com")
+    expect(proximaRotaSegura("/\f/evil.com")).toBe("/%0C/evil.com")
+  })
+
+  it("tab dentro do VALOR de uma query é removido pelo parser (inofensivo, comportamento fixado)", () => {
+    // ?next=/formularios?x=%09//evil.com → o tab é removido pelo parser de
+    // URL dentro da própria query string; o resultado fica com "x=//evil.com"
+    // como valor de query (string, não afeta host/origem) — comportamento
+    // atual documentado aqui para que uma mudança futura seja deliberada.
+    expect(proximaRotaSegura("/formularios?x=\t//evil.com")).toBe(
+      "/formularios?x=//evil.com",
+    )
+  })
+
+  it("fallback customizado é usado quando next é ausente/vazio ou inseguro", () => {
+    expect(proximaRotaSegura(null, "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("", "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("//evil.com", "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("/\\evil.com", "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("https://evil.com", "/dashboards")).toBe("/dashboards")
+  })
+
+  it("fallback customizado não interfere com next válido", () => {
+    expect(proximaRotaSegura("/formularios", "/dashboards")).toBe("/formularios")
+  })
+
+  it("os quatro vetores do redirect /api/auth/refresh caem no fallback (/dashboards)", () => {
+    // ?next=/%09/evil.com, /%0A/evil.com, /%5Cevil.com, /%09%5Cevil.com
+    expect(proximaRotaSegura("/\t/evil.com", "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("/\n/evil.com", "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("/\\evil.com", "/dashboards")).toBe("/dashboards")
+    expect(proximaRotaSegura("/\t\\evil.com", "/dashboards")).toBe("/dashboards")
+  })
 })
